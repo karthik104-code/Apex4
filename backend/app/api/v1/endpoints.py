@@ -15,6 +15,7 @@ from app.ai.llm_engine import generate_ai_health_response
 from app.ai.provider import get_ai_provider, SAFETY_DISCLAIMER
 from app.core.security import create_access_token, decode_access_token
 from app.rag.service import ingest_patient_report, query_rag_pipeline
+from app.voice.provider import get_stt_provider, get_tts_provider
 
 router = APIRouter()
 
@@ -355,3 +356,19 @@ def log_vital(payload: MetricCreate):
 @router.get("/notifications/", response_model=List[NotificationItem])
 def get_notifications():
     return DEMO_NOTIFICATIONS
+
+# --- PHASE 5: VOICE & MULTILINGUAL ENDPOINTS ---
+@router.post("/voice/stt")
+async def voice_speech_to_text(file: UploadFile = File(...), language: str = "en"):
+    content = await file.read()
+    stt = get_stt_provider()
+    result = stt.transcribe_audio(content, language=language)
+    return result
+
+@router.post("/voice/tts")
+def voice_text_to_speech(payload: Dict[str, Any]):
+    text = payload.get("text", "")
+    language = payload.get("language", "en")
+    tts = get_tts_provider()
+    result = tts.synthesize_speech(text, language=language)
+    return result
