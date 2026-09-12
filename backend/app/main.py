@@ -23,6 +23,10 @@ app.add_middleware(
 # Router Registrations
 app.include_router(api_v1_router, prefix=settings.API_V1_STR)
 
+@app.get("/health")
+def health():
+    return {"status": "ok"}
+
 @app.get("/")
 def root_healthcheck():
     return {

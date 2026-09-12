@@ -1,4 +1,4 @@
-import fitz  # PyMuPDF
+import pymupdf as fitz
 import re
 import uuid
 from datetime import datetime
