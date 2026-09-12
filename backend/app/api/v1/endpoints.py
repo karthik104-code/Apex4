@@ -171,12 +171,24 @@ def register(payload: UserRegister):
 def get_current_user():
     return DEMO_USER
 
-# --- REPORT PROCESSING ENDPOINTS ---
+# --- REPORT PROCESSING ENDPOINTS (PHASE 3) ---
 @router.post("/reports/upload", response_model=StructuredReportResult)
 async def upload_report(file: UploadFile = File(...)):
-    if not file:
+    if not file or not file.filename:
         raise HTTPException(status_code=400, detail="No file uploaded")
+    
+    # Validate extension (.pdf, .png, .jpg, .jpeg)
+    ext = f".{file.filename.split('.')[-1].lower()}" if "." in file.filename else ""
+    if ext not in [".pdf", ".png", ".jpg", ".jpeg"]:
+        raise HTTPException(
+            status_code=400, 
+            detail="Unsupported file format. Only PDF, PNG, JPG, and JPEG documents are permitted."
+        )
+
     content = await file.read()
+    if len(content) > 10 * 1024 * 1024:  # 10MB
+        raise HTTPException(status_code=400, detail="File size exceeds maximum 10MB limit.")
+
     result = process_medical_document(content, file.filename)
     DEMO_REPORTS.insert(0, result)
     return result
@@ -197,6 +209,12 @@ def get_report(report_id: str):
         return DEMO_REPORTS[0]
     sample = process_medical_document(b"Sample Blood Panel", "sample_lab_report.pdf")
     return sample
+
+@router.delete("/reports/{report_id}")
+def delete_report(report_id: str):
+    global DEMO_REPORTS
+    DEMO_REPORTS = [r for r in DEMO_REPORTS if r.id != report_id]
+    return {"status": "deleted", "id": report_id}
 
 # --- PHASE 2: AI HEALTHCARE ASSISTANT ENDPOINTS ---
 @router.post("/assistant/chat", response_model=AssistantChatResponse)

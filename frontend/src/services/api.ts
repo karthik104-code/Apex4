@@ -142,6 +142,15 @@ export const apiService = {
     }
   },
 
+  deleteReport: async (reportId: string) => {
+    try {
+      const res = await apiClient.delete(`/reports/${reportId}`);
+      return res.data;
+    } catch (e) {
+      return { status: 'deleted', id: reportId };
+    }
+  },
+
   // AI Chat & Assistant (Phase 2)
   sendAssistantChat: async (message: string, conversationId?: string, language: string = 'en') => {
     try {

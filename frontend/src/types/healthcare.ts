@@ -18,7 +18,7 @@ export interface ReportValue {
   value: string;
   unit: string;
   reference_range: string;
-  status: 'normal' | 'high' | 'low' | 'abnormal';
+  status: 'normal' | 'high' | 'low' | 'abnormal' | 'unknown';
   category?: string;
 }
 
