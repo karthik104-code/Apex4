@@ -47,6 +47,7 @@ export const App: React.FC = () => {
 
             {/* Protected App Routes */}
             <Route path="/dashboard" element={<ProtectedLayout><PatientDashboard /></ProtectedLayout>} />
+            <Route path="/assistant" element={<ProtectedLayout><AIAssistantPage /></ProtectedLayout>} />
             <Route path="/ai-assistant" element={<ProtectedLayout><AIAssistantPage /></ProtectedLayout>} />
             <Route path="/reports" element={<ProtectedLayout><MedicalReportsPage /></ProtectedLayout>} />
             <Route path="/appointments" element={<ProtectedLayout><AppointmentsPage /></ProtectedLayout>} />

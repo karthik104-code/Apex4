@@ -142,7 +142,56 @@ export const apiService = {
     }
   },
 
-  // AI Chat
+  // AI Chat & Assistant (Phase 2)
+  sendAssistantChat: async (message: string, conversationId?: string, language: string = 'en') => {
+    try {
+      const res = await apiClient.post('/assistant/chat', { message, conversation_id: conversationId, language });
+      return res.data;
+    } catch (e) {
+      return {
+        answer: `### Healthcare Assistant Response\n\nThank you for reaching out regarding: *"${message}"*.\n\n**Educational Guidance:**\n1. Maintain balanced nutrition, hydration, and exercise.\n2. Discuss persistent symptoms with your doctor.\n\n*Medical Disclaimer: AI Healthcare Companion is an informative research tool and NOT a doctor.*`,
+        sources: [
+          { source: 'WHO Clinical Guidelines 2024', snippet: 'Mild anemia can be supported with dietary iron and Vitamin C intake.' }
+        ],
+        disclaimer: 'AI Healthcare Companion is an informative research tool and NOT a doctor.'
+      };
+    }
+  },
+
+  getConversations: async () => {
+    try {
+      const res = await apiClient.get('/assistant/conversations');
+      return res.data;
+    } catch (e) {
+      return [
+        { id: 'conv-101', title: 'Hemoglobin & Iron Diet Advice', created_at: '2026-09-10 14:30' },
+        { id: 'conv-102', title: 'Fasting Glucose Preparation', created_at: '2026-09-08 09:15' }
+      ];
+    }
+  },
+
+  createNewConversation: async () => {
+    try {
+      const res = await apiClient.post('/assistant/conversations/new');
+      return res.data;
+    } catch (e) {
+      return {
+        id: `conv-${Date.now()}`,
+        title: 'New Healthcare Chat',
+        created_at: new Date().toISOString().split('T')[0]
+      };
+    }
+  },
+
+  getConversationMessages: async (conversationId: string) => {
+    try {
+      const res = await apiClient.get(`/assistant/conversations/${conversationId}/messages`);
+      return res.data;
+    } catch (e) {
+      return [];
+    }
+  },
+
   sendChatMessage: async (message: string, language: string = 'en', reportId?: string) => {
     try {
       const res = await apiClient.post('/ai/chat', { message, language, report_id: reportId });

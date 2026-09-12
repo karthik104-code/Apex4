@@ -109,6 +109,16 @@ class ChatRequest(BaseModel):
     report_id: Optional[str] = None
     language: Optional[str] = "en"  # 'en', 'ml', 'hi'
 
+class AssistantChatRequest(BaseModel):
+    conversation_id: Optional[str] = None
+    message: str
+    language: Optional[str] = "en"
+
+class AssistantChatResponse(BaseModel):
+    answer: str
+    sources: List[Dict[str, Any]] = []
+    disclaimer: str
+
 class ChatResponse(BaseModel):
     message_id: str
     conversation_id: str
@@ -116,6 +126,11 @@ class ChatResponse(BaseModel):
     language: str
     sources: List[Dict[str, Any]] = []
     disclaimer: str
+
+class ConversationItem(BaseModel):
+    id: str
+    title: str
+    created_at: str
 
 # --- NOTIFICATIONS ---
 class NotificationItem(BaseModel):

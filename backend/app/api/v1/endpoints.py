@@ -1,17 +1,19 @@
 import uuid
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import List, Dict, Any, Optional
 from fastapi import APIRouter, File, UploadFile, HTTPException, Depends, Header
 from app.models.schemas import (
     UserLogin, UserRegister, AuthResponse, UserProfile,
     StructuredReportResult, ReportExplanationResponse,
     Appointment, AppointmentCreate,
     HealthMetric, MetricCreate,
-    ChatRequest, ChatResponse, NotificationItem
+    ChatRequest, ChatResponse, AssistantChatRequest, AssistantChatResponse,
+    ConversationItem, ChatMessage, NotificationItem
 )
 from app.documents.extractor import process_medical_document
 from app.ai.llm_engine import generate_ai_health_response
-from app.core.security import create_access_token, decode_access_token, SAFETY_DISCLAIMER
+from app.ai.provider import get_ai_provider, SAFETY_DISCLAIMER
+from app.core.security import create_access_token, decode_access_token
 
 router = APIRouter()
 
@@ -32,6 +34,57 @@ DEMO_USER = UserProfile(
 )
 
 DEMO_REPORTS: List[StructuredReportResult] = []
+
+DEMO_CONVERSATIONS: List[ConversationItem] = [
+    ConversationItem(
+        id="conv-101",
+        title="Hemoglobin & Iron Diet Advice",
+        created_at="2026-09-10 14:30"
+    ),
+    ConversationItem(
+        id="conv-102",
+        title="Fasting Glucose Preparation",
+        created_at="2026-09-08 09:15"
+    )
+]
+
+DEMO_MESSAGES: Dict[str, List[ChatMessage]] = {
+    "conv-101": [
+        ChatMessage(
+            id="m-1",
+            sender="user",
+            text="What dietary steps can help improve my low hemoglobin levels?",
+            created_at="14:30"
+        ),
+        ChatMessage(
+            id="m-2",
+            sender="assistant",
+            text="### Understanding Low Hemoglobin & Iron Intake\n\nYour hemoglobin level (10.2 g/dL) is slightly below the standard reference range (12.0 - 16.5 g/dL).\n\n**Key Recommendations:**\n1. **Iron-Rich Foods**: Spinach, lentils, beans, dark leafy greens, and lean meats.\n2. **Vitamin C**: Pair iron-rich meals with Vitamin C (oranges, lemons, bell peppers) to boost absorption.\n3. **Consult Physician**: Please discuss with your doctor to check serum ferritin levels.",
+            created_at="14:31",
+            sources=[
+                {"source": "WHO Clinical Guidelines 2024", "snippet": "Mild anemia can be supported with dietary iron and Vitamin C intake."}
+            ]
+        )
+    ],
+    "conv-102": [
+        ChatMessage(
+            id="m-3",
+            sender="user",
+            text="How do I prepare for a fasting blood sugar test?",
+            created_at="09:15"
+        ),
+        ChatMessage(
+            id="m-4",
+            sender="assistant",
+            text="### Fasting Blood Glucose Test Preparation\n\nFast for at least 8 to 12 hours prior to your blood draw. You may drink plain water, but avoid coffee, tea, juices, or food.",
+            created_at="09:16",
+            sources=[
+                {"source": "American Diabetes Association Standard of Care", "snippet": "Fasting blood glucose testing requires 8-12 hours of overnight fasting."}
+            ]
+        )
+    ]
+}
+
 DEMO_APPOINTMENTS: List[Appointment] = [
     Appointment(
         id="apt-101",
@@ -131,7 +184,6 @@ async def upload_report(file: UploadFile = File(...)):
 @router.get("/reports/", response_model=List[StructuredReportResult])
 def list_reports():
     if not DEMO_REPORTS:
-        # Populate initial sample report if list is empty
         sample = process_medical_document(b"Sample Blood Panel", "sample_lab_report.pdf")
         DEMO_REPORTS.append(sample)
     return DEMO_REPORTS
@@ -146,29 +198,78 @@ def get_report(report_id: str):
     sample = process_medical_document(b"Sample Blood Panel", "sample_lab_report.pdf")
     return sample
 
-# --- AI ASSISTANT & CHAT ---
+# --- PHASE 2: AI HEALTHCARE ASSISTANT ENDPOINTS ---
+@router.post("/assistant/chat", response_model=AssistantChatResponse)
 @router.post("/ai/chat", response_model=ChatResponse)
-def chat_ai(payload: ChatRequest):
-    report_ctx = None
-    if payload.report_id:
-        for r in DEMO_REPORTS:
-            if r.id == payload.report_id:
-                report_ctx = f"Report Findings: {', '.join(r.key_findings)}"
-                break
+def assistant_chat(payload: AssistantChatRequest):
+    if not payload.message or not payload.message.strip():
+        raise HTTPException(status_code=400, detail="Message content cannot be empty")
+
+    conv_id = payload.conversation_id or f"conv-{uuid.uuid4().hex[:6]}"
     
-    resp = generate_ai_health_response(
-        query=payload.message, 
-        report_context=report_ctx,
+    # Store user message
+    user_msg = ChatMessage(
+        id=f"msg-{uuid.uuid4().hex[:6]}",
+        sender="user",
+        text=payload.message,
+        created_at=datetime.now().strftime("%H:%M")
+    )
+    
+    if conv_id not in DEMO_MESSAGES:
+        DEMO_MESSAGES[conv_id] = []
+        new_conv = ConversationItem(
+            id=conv_id,
+            title=payload.message[:30] + ("..." if len(payload.message) > 30 else ""),
+            created_at=datetime.now().strftime("%Y-%m-%d %H:%M")
+        )
+        DEMO_CONVERSATIONS.insert(0, new_conv)
+
+    DEMO_MESSAGES[conv_id].append(user_msg)
+
+    # Use AI Provider abstraction (LLM or Mock fallback)
+    provider = get_ai_provider()
+    result = provider.generate_chat_response(
+        message=payload.message,
+        conversation_id=conv_id,
         language=payload.language or "en"
     )
-    return ChatResponse(
-        message_id=resp["message_id"],
-        conversation_id=resp["conversation_id"],
-        reply_text=resp["reply_text"],
-        language=resp["language"],
-        sources=resp["sources"],
-        disclaimer=SAFETY_DISCLAIMER
+
+    # Store assistant message
+    asst_msg = ChatMessage(
+        id=f"msg-{uuid.uuid4().hex[:6]}",
+        sender="assistant",
+        text=result["answer"],
+        created_at=datetime.now().strftime("%H:%M"),
+        sources=result["sources"]
     )
+    DEMO_MESSAGES[conv_id].append(asst_msg)
+
+    return AssistantChatResponse(
+        answer=result["answer"],
+        sources=result["sources"],
+        disclaimer=result["disclaimer"]
+    )
+
+@router.get("/assistant/conversations", response_model=List[ConversationItem])
+def list_conversations():
+    return DEMO_CONVERSATIONS
+
+@router.post("/assistant/conversations/new", response_model=ConversationItem)
+def create_new_conversation():
+    new_conv = ConversationItem(
+        id=f"conv-{uuid.uuid4().hex[:6]}",
+        title="New Healthcare Chat",
+        created_at=datetime.now().strftime("%Y-%m-%d %H:%M")
+    )
+    DEMO_CONVERSATIONS.insert(0, new_conv)
+    DEMO_MESSAGES[new_conv.id] = []
+    return new_conv
+
+@router.get("/assistant/conversations/{conv_id}/messages", response_model=List[ChatMessage])
+def get_conversation_messages(conv_id: str):
+    if conv_id not in DEMO_MESSAGES:
+        return []
+    return DEMO_MESSAGES[conv_id]
 
 @router.get("/ai/suggested-questions", response_model=List[str])
 def suggested_questions():
