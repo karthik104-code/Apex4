@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Heart, Bot, FileText, Calendar, Plus, 
-  ArrowUpRight, AlertCircle, CheckCircle2, Activity, Sparkles, MessageSquare, Clock 
+  ArrowUpRight, AlertCircle, CheckCircle2, Activity, Sparkles, MessageSquare, Clock, X 
 } from 'lucide-react';
 import { ResponsiveContainer, LineChart, Line, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 import { useAuth } from '../context/AuthContext';
@@ -10,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
 import { Card } from '../components/ui/Card';
 import { Button } from '../components/ui/Button';
+import { Toast } from '../components/ui/Toast';
 import { apiService } from '../services/api';
 import { StructuredReportResult, Appointment, HealthMetric } from '../types/healthcare';
 
@@ -22,6 +23,12 @@ export const PatientDashboard: React.FC = () => {
   const [vitals, setVitals] = useState<HealthMetric[]>([]);
   const [conversations, setConversations] = useState<any[]>([]);
 
+  // Log Vitals Modal State
+  const [showLogModal, setShowLogModal] = useState(false);
+  const [metricType, setMetricType] = useState('hemoglobin');
+  const [metricValue, setMetricValue] = useState('11.0');
+  const [toastMessage, setToastMessage] = useState<string | null>(null);
+
   useEffect(() => {
     apiService.getReports().then(setReports);
     apiService.getAppointments().then(setAppointments);
@@ -33,14 +40,29 @@ export const PatientDashboard: React.FC = () => {
   const upcomingApt = appointments.find(a => a.status === 'scheduled');
   const completedApt = appointments.find(a => a.status === 'completed');
 
-  const hemoglobinTrend = [
+  const [hemoglobinTrend, setHemoglobinTrend] = useState([
     { date: 'Jan', value: 11.5 },
     { date: 'May', value: 10.8 },
     { date: 'Sep', value: 10.2 }
-  ];
+  ]);
+
+  const handleSaveVital = () => {
+    const val = parseFloat(metricValue);
+    if (isNaN(val)) return;
+
+    if (metricType === 'hemoglobin') {
+      setHemoglobinTrend(prev => [...prev, { date: 'Today', value: val }]);
+    }
+    setShowLogModal(false);
+    setToastMessage(`Logged new ${metricType.toUpperCase()} reading: ${val}!`);
+  };
 
   return (
     <div className="space-y-6">
+      {toastMessage && (
+        <Toast message={toastMessage} type="success" onClose={() => setToastMessage(null)} />
+      )}
+
       {/* 1. Welcome Section */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-gradient-to-r from-surface via-slate-800/80 to-slate-900/90 p-6 rounded-3xl border border-slate-800 shadow-xl">
         <div>
@@ -58,6 +80,10 @@ export const PatientDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <Button variant="secondary" size="md" onClick={() => setShowLogModal(true)}>
+            <Activity className="w-4 h-4 text-primary-400" />
+            <span>+ Log Vitals</span>
+          </Button>
           <Button variant="primary" size="md" onClick={() => navigate('/reports')}>
             <Plus className="w-4 h-4" />
             <span>Upload New Report</span>
@@ -304,6 +330,67 @@ export const PatientDashboard: React.FC = () => {
           </Card>
         </div>
       </div>
+
+      {/* Log Vitals Reading Modal */}
+      {showLogModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-3xl max-w-md w-full border border-slate-700 space-y-4 text-left relative animate-in fade-in zoom-in-95">
+            <button 
+              onClick={() => setShowLogModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-2xl bg-primary-500/20 border border-primary-500/40 flex items-center justify-center text-primary-400">
+                <Activity className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-100">Log Vitals Reading</h3>
+                <p className="text-xs text-slate-400">Record self-measured or updated lab values</p>
+              </div>
+            </div>
+
+            <div className="space-y-3 text-xs">
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Health Parameter</label>
+                <select
+                  value={metricType}
+                  onChange={(e) => setMetricType(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:border-primary-500"
+                >
+                  <option value="hemoglobin">Hemoglobin (g/dL)</option>
+                  <option value="glucose">Fasting Blood Glucose (mg/dL)</option>
+                  <option value="cholesterol">Total Cholesterol (mg/dL)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="block text-slate-300 font-semibold mb-1">Value</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={metricValue}
+                  onChange={(e) => setMetricValue(e.target.value)}
+                  className="w-full p-3 rounded-xl bg-slate-900 border border-slate-700 text-slate-100 focus:outline-none focus:border-primary-500"
+                  placeholder="e.g. 11.2"
+                />
+              </div>
+            </div>
+
+            <div className="flex items-center gap-3 pt-2">
+              <Button variant="secondary" size="md" onClick={() => setShowLogModal(false)} className="w-full">
+                Cancel
+              </Button>
+              <Button variant="primary" size="md" onClick={handleSaveVital} className="w-full">
+                Save Vital
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
+

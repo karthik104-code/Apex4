@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Bell, Globe, User, Activity, Menu, Check } from 'lucide-react';
+import { Bell, Globe, User, Activity, Menu, Check, AlertTriangle, PhoneCall, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage, LanguageCode } from '../context/LanguageContext';
 import { apiService } from '../services/api';
@@ -15,6 +15,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
   const [showNotifs, setShowNotifs] = useState(false);
   const [showLangMenu, setShowLangMenu] = useState(false);
+  const [showSOSModal, setShowSOSModal] = useState(false);
 
   useEffect(() => {
     apiService.getNotifications().then(setNotifications);
@@ -48,6 +49,16 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* SOS Emergency Button */}
+        <button
+          onClick={() => setShowSOSModal(true)}
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 text-xs font-bold transition-all animate-pulse"
+          title="Emergency Medical Assistance"
+        >
+          <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+          <span>SOS</span>
+        </button>
+
         {/* Language Selector Dropdown */}
         <div className="relative">
           <button
@@ -131,6 +142,56 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
           </div>
         </div>
       </div>
+
+      {/* SOS Emergency Modal */}
+      {showSOSModal && (
+        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+          <div className="glass-panel p-6 rounded-3xl max-w-md w-full border border-rose-500/40 space-y-4 text-left relative animate-in fade-in zoom-in-95">
+            <button 
+              onClick={() => setShowSOSModal(false)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <div className="flex items-center gap-3 text-rose-400">
+              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-rose-400" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-100">Emergency Medical Support</h3>
+                <p className="text-xs text-rose-300">If you are experiencing severe symptoms, act immediately.</p>
+              </div>
+            </div>
+
+            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs text-slate-300">
+              <p className="font-semibold text-rose-300">⚠️ Call Emergency Services if experiencing:</p>
+              <ul className="list-disc list-inside space-y-1 text-slate-400">
+                <li>Severe chest pain or difficulty breathing</li>
+                <li>Sudden numbness or loss of consciousness</li>
+                <li>Uncontrolled bleeding or severe trauma</li>
+              </ul>
+            </div>
+
+            <div className="space-y-2">
+              <a
+                href="tel:911"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all"
+              >
+                <PhoneCall className="w-4 h-4" />
+                <span>Call National Emergency Services (911 / 108)</span>
+              </a>
+              <button
+                onClick={() => setShowSOSModal(false)}
+                className="w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition-all"
+              >
+                Close Warning Window
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </header>
   );
 };
+

@@ -2,7 +2,8 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { 
   Upload, FileText, CheckCircle2, AlertCircle, HelpCircle, 
-  Sparkles, ArrowRight, Trash2, Calendar, FileCheck, ShieldAlert 
+  Sparkles, ArrowRight, Trash2, Calendar, FileCheck, ShieldAlert,
+  Download, PlayCircle
 } from 'lucide-react';
 import { MedicalDisclaimer } from '../components/MedicalDisclaimer';
 import { Toast } from '../components/ui/Toast';
@@ -81,6 +82,36 @@ export const MedicalReportsPage: React.FC = () => {
     }
   };
 
+  const handleLoadSampleReport = async () => {
+    setIsUploading(true);
+    setUploadProgress(30);
+    setTimeout(async () => {
+      const sampleBlob = new Blob(["Sample Medical Blood Test PDF Data - Hemoglobin: 10.2 g/dL, Glucose: 145 mg/dL"], { type: "application/pdf" });
+      const sampleFile = new File([sampleBlob], "sample_blood_work_panel_2026.pdf", { type: "application/pdf" });
+      setUploadProgress(80);
+      const result = await apiService.uploadReport(sampleFile);
+      setUploadProgress(100);
+      setReports(prev => [result, ...prev]);
+      setSelectedReport(result);
+      setIsUploading(false);
+      setUploadProgress(0);
+      showToast("Loaded 1-Click Sample Lab Report for instant testing!", "success");
+    }, 600);
+  };
+
+  const handleExportSummary = () => {
+    if (!selectedReport) return;
+    const jsonStr = JSON.stringify(selectedReport, null, 2);
+    const blob = new Blob([jsonStr], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `medical_report_summary_${selectedReport.id}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast("Exported structured medical report summary!", "success");
+  };
+
   const handleDeleteReport = async (reportId: string) => {
     try {
       await apiService.deleteReport(reportId);
@@ -115,6 +146,17 @@ export const MedicalReportsPage: React.FC = () => {
           <p className="text-xs sm:text-sm text-slate-400 mt-1">
             Upload PDF, PNG, JPG, or JPEG laboratory documents for automated parameter extraction and AI explanations.
           </p>
+        </div>
+        <div className="flex items-center gap-3">
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={handleLoadSampleReport}
+            className="whitespace-nowrap flex items-center gap-2 border-primary-500/40 text-primary-300 hover:bg-primary-500/20"
+          >
+            <PlayCircle className="w-4 h-4 text-primary-400" />
+            <span>Load Demo Sample Report</span>
+          </Button>
         </div>
       </div>
 
@@ -176,6 +218,14 @@ export const MedicalReportsPage: React.FC = () => {
                   <span className="px-3 py-1 rounded-full bg-amber-500/20 text-amber-300 text-xs font-semibold border border-amber-500/30">
                     {selectedReport.abnormal_count} Parameters Flagged
                   </span>
+                  <button
+                    onClick={handleExportSummary}
+                    className="p-2 rounded-xl text-slate-300 hover:text-white bg-slate-800 hover:bg-slate-700 transition-all flex items-center gap-1.5 text-xs font-medium"
+                    title="Export Report Summary"
+                  >
+                    <Download className="w-4 h-4 text-primary-400" />
+                    <span>Export JSON</span>
+                  </button>
                   <button
                     onClick={() => handleDeleteReport(selectedReport.id)}
                     className="p-2 rounded-xl text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition-all"
@@ -326,3 +376,4 @@ export const MedicalReportsPage: React.FC = () => {
     </div>
   );
 };
+
