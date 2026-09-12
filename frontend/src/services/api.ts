@@ -274,6 +274,35 @@ export const apiService = {
     }
   },
 
+  updateAppointment: async (id: string, updates: Partial<Appointment>): Promise<Appointment> => {
+    try {
+      const res = await apiClient.put(`/appointments/${id}`, updates);
+      return res.data;
+    } catch (e) {
+      return {
+        id,
+        patient_id: 'user-demo-101',
+        doctor_name: updates.doctor_name || 'Dr. Sarah Jenkins',
+        specialty: updates.specialty || 'Internal Medicine',
+        appointment_date: updates.appointment_date || '2026-09-22',
+        time_slot: updates.time_slot || '10:30 AM',
+        location_type: updates.location_type || 'in_person',
+        status: updates.status || 'scheduled',
+        notes: updates.notes,
+        follow_up_date: updates.follow_up_date
+      };
+    }
+  },
+
+  deleteAppointment: async (id: string) => {
+    try {
+      const res = await apiClient.delete(`/appointments/${id}`);
+      return res.data;
+    } catch (e) {
+      return { status: 'deleted', id };
+    }
+  },
+
   // Analytics
   getHealthMetrics: async (): Promise<HealthMetric[]> => {
     try {

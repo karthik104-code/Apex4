@@ -313,11 +313,13 @@ def suggested_questions():
         "Can exercise help reduce fasting glucose levels?"
     ]
 
-# --- APPOINTMENTS ---
+# --- PHASE 6: APPOINTMENTS & FOLLOW-UPS ENDPOINTS ---
+@router.get("/appointments", response_model=List[Appointment])
 @router.get("/appointments/", response_model=List[Appointment])
 def list_appointments():
     return DEMO_APPOINTMENTS
 
+@router.post("/appointments", response_model=Appointment)
 @router.post("/appointments/create", response_model=Appointment)
 def create_appointment(payload: AppointmentCreate):
     apt = Appointment(
@@ -334,6 +336,23 @@ def create_appointment(payload: AppointmentCreate):
     )
     DEMO_APPOINTMENTS.insert(0, apt)
     return apt
+
+@router.put("/appointments/{apt_id}", response_model=Appointment)
+def update_appointment(apt_id: str, payload: Dict[str, Any]):
+    for idx, apt in enumerate(DEMO_APPOINTMENTS):
+        if apt.id == apt_id:
+            updated_dict = apt.model_dump()
+            updated_dict.update({k: v for k, v in payload.items() if v is not None})
+            updated_apt = Appointment(**updated_dict)
+            DEMO_APPOINTMENTS[idx] = updated_apt
+            return updated_apt
+    raise HTTPException(status_code=404, detail="Appointment not found")
+
+@router.delete("/appointments/{apt_id}")
+def delete_appointment(apt_id: str):
+    global DEMO_APPOINTMENTS
+    DEMO_APPOINTMENTS = [a for a in DEMO_APPOINTMENTS if a.id != apt_id]
+    return {"status": "deleted", "id": apt_id}
 
 # --- HEALTH METRICS & ANALYTICS ---
 @router.get("/analytics/vitals", response_model=List[HealthMetric])
