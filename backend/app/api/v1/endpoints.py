@@ -14,6 +14,7 @@ from app.documents.extractor import process_medical_document
 from app.ai.llm_engine import generate_ai_health_response
 from app.ai.provider import get_ai_provider, SAFETY_DISCLAIMER
 from app.core.security import create_access_token, decode_access_token
+from app.rag.service import ingest_patient_report, query_rag_pipeline
 
 router = APIRouter()
 
@@ -171,7 +172,7 @@ def register(payload: UserRegister):
 def get_current_user():
     return DEMO_USER
 
-# --- REPORT PROCESSING ENDPOINTS (PHASE 3) ---
+# --- REPORT PROCESSING ENDPOINTS (PHASE 3 & 4) ---
 @router.post("/reports/upload", response_model=StructuredReportResult)
 async def upload_report(file: UploadFile = File(...)):
     if not file or not file.filename:
@@ -191,6 +192,18 @@ async def upload_report(file: UploadFile = File(...)):
 
     result = process_medical_document(content, file.filename)
     DEMO_REPORTS.insert(0, result)
+
+    # Ingest document into RAG vector store for evidence-based Q&A
+    try:
+        ingest_patient_report(
+            report_id=result.id,
+            title=result.title,
+            raw_text=result.patient_explanation,
+            key_findings=result.key_findings
+        )
+    except Exception as e:
+        print(f"RAG ingestion warning: {e}")
+
     return result
 
 @router.get("/reports/", response_model=List[StructuredReportResult])
@@ -216,7 +229,8 @@ def delete_report(report_id: str):
     DEMO_REPORTS = [r for r in DEMO_REPORTS if r.id != report_id]
     return {"status": "deleted", "id": report_id}
 
-# --- PHASE 2: AI HEALTHCARE ASSISTANT ENDPOINTS ---
+# --- PHASE 2 & 4: AI HEALTHCARE ASSISTANT & RAG ENDPOINTS ---
+@router.post("/rag/query", response_model=AssistantChatResponse)
 @router.post("/assistant/chat", response_model=AssistantChatResponse)
 @router.post("/ai/chat", response_model=ChatResponse)
 def assistant_chat(payload: AssistantChatRequest):
@@ -244,11 +258,10 @@ def assistant_chat(payload: AssistantChatRequest):
 
     DEMO_MESSAGES[conv_id].append(user_msg)
 
-    # Use AI Provider abstraction (LLM or Mock fallback)
-    provider = get_ai_provider()
-    result = provider.generate_chat_response(
-        message=payload.message,
-        conversation_id=conv_id,
+    # Step-by-step evidence-based RAG pipeline
+    rag_result = query_rag_pipeline(
+        query=payload.message,
+        report_id=None,
         language=payload.language or "en"
     )
 
@@ -256,16 +269,16 @@ def assistant_chat(payload: AssistantChatRequest):
     asst_msg = ChatMessage(
         id=f"msg-{uuid.uuid4().hex[:6]}",
         sender="assistant",
-        text=result["answer"],
+        text=rag_result["answer"],
         created_at=datetime.now().strftime("%H:%M"),
-        sources=result["sources"]
+        sources=rag_result["sources"]
     )
     DEMO_MESSAGES[conv_id].append(asst_msg)
 
     return AssistantChatResponse(
-        answer=result["answer"],
-        sources=result["sources"],
-        disclaimer=result["disclaimer"]
+        answer=rag_result["answer"],
+        sources=rag_result["sources"],
+        disclaimer=rag_result["disclaimer"]
     )
 
 @router.get("/assistant/conversations", response_model=List[ConversationItem])
