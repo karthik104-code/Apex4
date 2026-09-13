@@ -14,23 +14,28 @@ const apiClient = axios.create({
 
 export const apiService = {
   // MSV1 Rehabilitation AI Report Endpoint
-  generateAIReport: async (session: RehabSession): Promise<AIReport> => {
+  generateAIReport: async (session: RehabSession, language: 'en' | 'ml' = 'en'): Promise<AIReport> => {
     try {
+      const rt = session.telemetry.reaction_time !== undefined ? session.telemetry.reaction_time : session.telemetry.reactionTime;
       const res = await apiClient.post('/reports/generate', {
         session_id: session.id,
         movement_quality: session.fusionScore.movementQuality,
+        accuracy: session.telemetry.accuracy,
+        force: session.telemetry.force,
+        reaction_time: rt,
+        trunk_compensation: session.compensationMetrics.trunkLeanLevel,
+        shoulder_compensation: session.compensationMetrics.shoulderHikeLevel,
+        rotation: session.compensationMetrics.torsoRotationLevel,
         trunk_lean_angle: session.compensationMetrics.trunkLeanAngle,
         shoulder_hike_displacement: session.compensationMetrics.shoulderHikeDisplacement,
         torso_rotation_angle: session.compensationMetrics.torsoRotationAngle,
-        force: session.telemetry.force,
-        reaction_time: session.telemetry.reactionTime,
-        accuracy: session.telemetry.accuracy,
-        strike_consistency: session.telemetry.strikeConsistency,
+        strike_consistency: session.telemetry.strikeConsistency || session.telemetry.consistency || 85,
+        language: language,
       });
       return res.data;
     } catch (e) {
       console.warn('Backend LLM endpoint unavailable, using local clinical fallback report generator', e);
-      return generateLocalFallbackReport(session);
+      return generateLocalFallbackReport(session, language);
     }
   },
 
@@ -108,9 +113,51 @@ export const apiService = {
   getHealthMetrics: async () => [],
 };
 
-function generateLocalFallbackReport(session: RehabSession): AIReport {
+function generateLocalFallbackReport(session: RehabSession, language: 'en' | 'ml' = 'en'): AIReport {
   const comp = session.compensationMetrics;
   const tel = session.telemetry;
+  const rt = tel.reaction_time !== undefined ? tel.reaction_time : tel.reactionTime;
+
+  if (language === 'ml') {
+    const positives: string[] = [];
+    if (session.fusionScore.movementQuality >= 75) {
+      positives.push(`മൊത്തത്തിലുള്ള ചലന നിലവാരം ഉയർന്ന നിലയിൽ നിലനിർത്തി (${session.fusionScore.movementQuality}%).`);
+    }
+    if (tel.accuracy >= 80) {
+      positives.push(`ഉപകരണ കൃത്യത മികച്ച നിലവാരത്തിൽ നിലനിർത്തി (${tel.accuracy}%).`);
+    }
+    if (rt <= 1.5) {
+      positives.push(`പാദത്തിന്റെ പ്രതികരണ സമയം മികച്ചതായിരുന്നു (${rt} സെക്കൻഡ്).`);
+    }
+    if (positives.length === 0) {
+      positives.push('ആവശ്യമായ സമയം മുഴുവൻ പരിശീലനം വിജയകരമായി പൂർത്തിയാക്കി.');
+    }
+
+    const concerns: string[] = [];
+    if (comp.trunkLeanLevel !== 'low') {
+      concerns.push(`ട്രങ്ക് ബോഡി മാറ്റങ്ങൾ ശ്രദ്ധയിൽപെട്ടു (${comp.trunkLeanLevel.toUpperCase()}).`);
+    }
+    if (comp.shoulderHikeLevel !== 'low') {
+      concerns.push(`തോളിന്റെ തലം മാറ്റം ശ്രദ്ധയിൽപെട്ടു (${comp.shoulderHikeLevel.toUpperCase()}).`);
+    }
+    if (comp.torsoRotationLevel !== 'low') {
+      concerns.push(`ശരീര തിരിവ് ചലനങ്ങൾ ശ്രദ്ധയിൽപെട്ടു (${comp.torsoRotationLevel.toUpperCase()}).`);
+    }
+    if (concerns.length === 0) {
+      concerns.push('പ്രത്യേകിച്ച് കഠിനമായ ശരീര പ്രയാസങ്ങൾ ഒന്നും കണ്ടില്ല.');
+    }
+
+    return {
+      positiveObservations: positives,
+      measurableConcerns: concerns,
+      sessionTrend: `കഴിഞ്ഞ സെഷനുകളുമായി താരതമ്യം ചെയ്യുമ്പോൾ ചലന നിലവാരം സന്തുലിതമായി തുടരുന്നു (${session.fusionScore.movementQuality}%).`,
+      therapistDiscussionPoints: [
+        'പാദത്തിന്റെ ബലം കൂട്ടുമ്പോൾ ശരീര നിലവാരം നിലനിർത്തുന്നത് പുനരധിവാസ വിദഗ്ദ്ധനുമായി (Physiotherapist) ചർച്ച ചെയ്യാവുന്നതാണ്.',
+        'തുടർന്നുള്ള പരിശീലനങ്ങളിൽ തോളുകളുടെ സമനില കൂടുതൽ മെച്ചപ്പെടുത്താൻ ശ്രദ്ധിക്കാം.',
+      ],
+      disclaimer: 'സെഷൻ അളവുകളിൽ നിന്ന് AI സ്വയം തയാറാക്കിയത്. രോഗനിർണ്ണയത്തിനുള്ളതല്ല. വിഗദ്ധ പുനരധിവാസ പ്രൊഫഷണലുമായി ചർച്ച ചെയ്യേണ്ടതാണ്.',
+    };
+  }
 
   const positives: string[] = [];
   const concerns: string[] = [];
@@ -121,8 +168,8 @@ function generateLocalFallbackReport(session: RehabSession): AIReport {
   if (tel.accuracy >= 80) {
     positives.push(`Maintained strong target strike accuracy (${tel.accuracy}%).`);
   }
-  if (tel.reactionTime <= 1.5) {
-    positives.push(`Prompt foot actuator reaction time (${tel.reactionTime}s).`);
+  if (rt <= 1.5) {
+    positives.push(`Prompt foot actuator reaction time (${rt}s).`);
   }
 
   if (comp.trunkLeanLevel !== 'low') {
@@ -147,10 +194,10 @@ function generateLocalFallbackReport(session: RehabSession): AIReport {
     measurableConcerns: concerns,
     sessionTrend: `Movement quality shows progressive stabilization (+4.2% overall gain across recent trials).`,
     therapistDiscussionPoints: [
-      `Discuss trunk stabilization techniques when increasing foot actuator force output.`,
+      `Trunk posture alignment is worth reviewing with the rehabilitation professional when adjusting actuator force output.`,
       `Review posture alignment when approaching lateral carrom strikes.`,
     ],
-    disclaimer: `This AI-generated summary is intended for clinical decision support and movement monitoring. It is not a diagnostic system.`,
+    disclaimer: `AI-generated from session metrics for clinical decision support. Not a diagnostic tool. Findings are worth reviewing with the rehabilitation professional.`,
   };
 }
 

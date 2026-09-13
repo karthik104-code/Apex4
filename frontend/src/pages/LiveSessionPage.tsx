@@ -4,6 +4,7 @@ import { Play, Pause, Square, Sparkles, Activity, Clock, ShieldCheck, RefreshCw 
 import { PoseCameraView } from '../components/PoseCameraView';
 import { CompensationGauges } from '../components/CompensationGauges';
 import { TelemetryPanel } from '../components/TelemetryPanel';
+import { FusionInsightPanel } from '../components/FusionInsightPanel';
 import { Button } from '../components/ui/Button';
 import { Toast } from '../components/ui/Toast';
 import {
@@ -11,12 +12,11 @@ import {
   BaselineCalibration,
   CompensationMetrics,
   HardwareTelemetry,
-  FusionScore,
   RehabSession,
 } from '../types/rehab';
 import { calculateCompensation, createDefaultCalibration } from '../pose/compensation';
 import { msv1Hardware } from '../services/hardwareSimulator';
-import { computeSensorFusionScore } from '../services/fusionEngine';
+import { computeSensorFusionScore, ExtendedFusionScore } from '../services/fusionEngine';
 
 interface LiveSessionPageProps {
   calibration: BaselineCalibration;
@@ -39,7 +39,7 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
   const [telemetry, setTelemetry] = useState<HardwareTelemetry>(
     msv1Hardware.getSimulatedTelemetry()
   );
-  const [fusionScore, setFusionScore] = useState<FusionScore>(
+  const [fusionScore, setFusionScore] = useState<ExtendedFusionScore>(
     computeSensorFusionScore(compensation, telemetry)
   );
 
@@ -53,6 +53,7 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
         // Refresh telemetry on interval
         const latestTel = msv1Hardware.getSimulatedTelemetry();
         setTelemetry(latestTel);
+        setFusionScore(computeSensorFusionScore(compensation, latestTel));
       }, 1000);
     } else if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -61,7 +62,7 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isSessionActive]);
+  }, [isSessionActive, compensation]);
 
   // Handle live pose landmarks from Camera View
   const handlePoseDetected = (landmarks: PoseLandmark[]) => {
@@ -174,49 +175,20 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
 
       {/* Main Grid Layout */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        {/* Left Column (8 cols): Camera Feed & Live Gauges */}
-        <div className="lg:col-span-8 space-y-6">
+        {/* Left Column (7 cols): Camera Feed & Live Gauges */}
+        <div className="lg:col-span-7 space-y-6">
           <PoseCameraView onPoseDetected={handlePoseDetected} />
           <CompensationGauges metrics={compensation} />
         </div>
 
-        {/* Right Column (4 cols): Fused Score Card & Telemetry Panel */}
-        <div className="lg:col-span-4 space-y-6">
-          {/* Real-time Fused Movement Quality Score Card */}
-          <div className="glass-panel p-6 rounded-3xl border border-slate-800 space-y-4 bg-gradient-to-b from-slate-900/90 to-surface">
-            <div className="flex items-center justify-between">
-              <span className="text-xs font-semibold text-primary-400 uppercase tracking-wider flex items-center gap-1.5">
-                <Sparkles className="w-4 h-4" />
-                Sensor Fusion Engine
-              </span>
-              <span className="text-[10px] text-slate-400 font-semibold uppercase">
-                Real-Time
-              </span>
-            </div>
-
-            <div className="text-center py-3 border-y border-slate-800/80 space-y-1">
-              <span className="text-xs text-slate-400 font-medium block">
-                Movement Quality Score
-              </span>
-              <div className="text-5xl font-black bg-gradient-to-r from-emerald-400 via-teal-300 to-cyan-400 bg-clip-text text-transparent">
-                {fusionScore.movementQuality}%
-              </div>
-              <p className="text-xs text-slate-300 font-medium pt-1">
-                {fusionScore.compensationSummary}
-              </p>
-            </div>
-
-            <div className="grid grid-cols-2 gap-3 text-xs">
-              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
-                <span className="text-slate-400 block text-[11px]">Hardware Score</span>
-                <span className="font-bold text-slate-200 text-base">{fusionScore.performanceScore}%</span>
-              </div>
-              <div className="p-3 rounded-2xl bg-slate-950/60 border border-slate-800/80 text-center">
-                <span className="text-slate-400 block text-[11px]">Combined Index</span>
-                <span className="font-bold text-primary-400 text-base">{fusionScore.combinedSessionScore}%</span>
-              </div>
-            </div>
-          </div>
+        {/* Right Column (5 cols): Fusion Insight Panel & Telemetry Panel */}
+        <div className="lg:col-span-5 space-y-6">
+          {/* Phase 5 Vision + MSV1 Data Fusion Panel (AI Movement Analysis, MSV1 Performance, Combined Session Insight) */}
+          <FusionInsightPanel
+            compensation={compensation}
+            telemetry={telemetry}
+            fusionScore={fusionScore}
+          />
 
           {/* MSV1 Hardware Telemetry */}
           <TelemetryPanel
@@ -225,12 +197,15 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
               msv1Hardware.setPreset(preset);
               const updated = msv1Hardware.getSimulatedTelemetry();
               setTelemetry(updated);
+              setFusionScore(computeSensorFusionScore(compensation, updated));
             }}
             onToggleMode={() => {
               const current = msv1Hardware.getMode();
               const next = current === 'simulated' ? 'hardware' : 'simulated';
               msv1Hardware.setMode(next);
-              setTelemetry(msv1Hardware.getSimulatedTelemetry());
+              const updated = msv1Hardware.getSimulatedTelemetry();
+              setTelemetry(updated);
+              setFusionScore(computeSensorFusionScore(compensation, updated));
             }}
           />
         </div>

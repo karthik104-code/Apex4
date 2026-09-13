@@ -27,13 +27,19 @@ export interface BaselineCalibration {
   isCalibrated: boolean;
 }
 
+export type TelemetryMode = 'SIMULATED' | 'LIVE HARDWARE';
+
 export interface HardwareTelemetry {
   force: number; // 0..100%
-  reactionTime: number; // Seconds
+  reactionTime: number; // Seconds (e.g. 1.24)
+  reaction_time?: number; // Alias for reactionTime
   accuracy: number; // 0..100%
   strikeConsistency: number; // 0..100%
-  mode: 'simulated' | 'hardware';
+  consistency?: number; // Alias for strikeConsistency
+  timestamp?: string; // ISO 8601 string
+  mode: TelemetryMode | 'simulated' | 'hardware';
   profilePreset?: 'normal' | 'fatigue' | 'high_compensation';
+  connectionStatus?: 'connected' | 'disconnected' | 'simulated';
 }
 
 export interface FusionScore {

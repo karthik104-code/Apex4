@@ -1,6 +1,5 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { UserProfile } from '../types/healthcare';
-import { apiService } from '../services/api';
 
 interface AuthContextType {
   user: UserProfile | null;
@@ -14,22 +13,28 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>({
     id: 'user-demo-101',
-    email: 'patient@healthcare.ai',
-    full_name: 'John Doe',
+    email: 'therapist@msv1.ai',
+    full_name: 'Dr. Alex Vance, PT',
     role: 'patient',
-    age: 34,
+    age: 38,
     gender: 'Male',
-    blood_group: 'O+',
-    height_cm: 176,
-    weight_kg: 72.5,
-    medical_history: ['Mild Seasonal Allergies', 'Borderline Anemia (2025)'],
-    emergency_contact: '+1 (555) 019-2834',
-    language_preference: 'en'
+    medical_history: [],
+    emergency_contact: '',
+    language_preference: 'en',
   });
 
   const login = async (email: string, password: string) => {
-    const res = await apiService.login(email, password);
-    setUser(res.user);
+    setUser({
+      id: 'user-demo-101',
+      email: email || 'therapist@msv1.ai',
+      full_name: 'Dr. Alex Vance, PT',
+      role: 'patient',
+      age: 38,
+      gender: 'Male',
+      medical_history: [],
+      emergency_contact: '',
+      language_preference: 'en',
+    });
   };
 
   const logout = () => {
@@ -37,7 +42,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   };
 
   return (
-    <AuthContext.Provider value={{ user, isAuthenticated: !!user, login, logout }}>
+    <AuthContext.Provider value={{ user, isAuthenticated: true, login, logout }}>
       {children}
     </AuthContext.Provider>
   );

@@ -1,74 +1,72 @@
-# MSV1 System Architecture Document
+# MSV1 System Architecture
 
-## Overview
-MSV1 is an AI-assisted rehabilitation platform that transforms foot-operated carrom gameplay into a quantifiable therapeutic monitoring system for individuals with upper-limb motor impairments.
-
----
-
-## Technical Stack Architecture
+This document describes the software architecture for the **MSV1 AI-Assisted Rehabilitation Platform**.
 
 ```
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           FRONTEND LAYER                                │
-│  React 18 + TypeScript + Vite + Tailwind CSS + Lucide Icons + Recharts  │
-│                                                                         │
-│  ┌────────────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
-│  │ MediaPipe Pose Engine │  │ Compensation AI  │  │ Hardware Sim    │ │
-│  │ (Client-side Vision)   │  │ Calculation      │  │ / API Adapter   │ │
-│  └───────────┬────────────┘  └────────┬─────────┘  └────────┬────────┘ │
-│              │                        │                     │          │
-│              └────────────────────────┼─────────────────────┘          │
-│                                       ▼                                │
-│                         [Client-Side Sensor Fusion]                    │
-│                                       │                                │
-└───────────────────────────────────────┼────────────────────────────────┘
-                                        │ REST / JSON
-                                        ▼
-┌─────────────────────────────────────────────────────────────────────────┐
-│                           BACKEND LAYER                                 │
-│                   FastAPI (Python 3.12) REST API                        │
-│                                                                         │
-│  ┌────────────────────────┐  ┌──────────────────┐  ┌─────────────────┐ │
-│  │ Session Analytics      │  │ Score Fusion     │  │ Generative AI   │ │
-│  │ & History Store        │  │ Verification     │  │ Session Report  │ │
-│  └────────────────────────┘  └──────────────────┘  └─────────────────┘ │
-└─────────────────────────────────────────────────────────────────────────┘
+                           +--------------------------------+
+                           |  MSV1 Physical Foot Actuator   |
+                           |    (Force, Speed, Accuracy)    |
+                           +---------------+----------------+
+                                           |
+                                           v
+                              +-------------------------+
+                              | Telemetry API Adapter   |
+                              |  (Simulated / Live HW)  |
+                              +------------+------------+
+                                           |
++--------------------------+               |
+| Webcam / MediaPipe Pose  |               |
+|  (33 Anatomical Joints)  |               v
++------------+-------------+     +-------------------+
+             |                   | Sensor Fusion     |
+             +------------------>| Calculation Engine|
+                                 +---------+---------+
+                                           |
+                                           v
+                             +---------------------------+
+                             | Real-Time Dashboard &     |
+                             | Clinical Report Generator |
+                             |   (Gemini API / Local)    |
+                             +---------------------------+
 ```
 
 ---
 
-## 1. Perception Layer (Computer Vision)
-- **Model**: MediaPipe Pose Landmarker running client-side inside HTML5 Canvas via `@mediapipe/tasks-vision` or MediaPipe Pose JS SDK.
-- **Landmarks Evaluated**:
-  - `LEFT_SHOULDER` (11), `RIGHT_SHOULDER` (12)
-  - `LEFT_HIP` (23), `RIGHT_HIP` (24)
-  - `NOSE` / `MID_SHOULDER` / `MID_HIP` (Spinal Alignment Vector)
+## 🏗️ Architectural Layers
 
-## 2. Movement Compensation Layer
-- **Trunk Lean Index**: Vector deflection of torso mid-line from calibrated vertical baseline $\theta_{\text{lean}} = \arccos(\vec{v}_{\text{spine}} \cdot \vec{v}_{\text{baseline}})$.
-- **Shoulder Hike Index**: Asymmetry ratio $d_{\text{hike}} = \frac{|y_{\text{left\_shoulder}} - y_{\text{right\_shoulder}}|}{W_{\text{shoulder\_baseline}}}$.
-- **Torso Rotation Index**: Angular discrepancy between shoulder line and hip line vectors in 2D projection.
-- **Normalization**: Normalized against shoulder width $W_{\text{shoulder\_baseline}}$ to compensate for camera distance variations.
+### 1. Computer Vision Layer
+- **Technology**: MediaPipe Pose / Pose Landmarker (Client-side WASM/JS).
+- **Module**: `frontend/src/pose/compensation.ts` (`MovementCompensationEngine`).
+- **Function**: Extracts 33 3D body landmarks. Computes distance-normalized metrics for:
+  - Trunk Lean Angle ($\theta = \arctan(|dx|/|dy|)$)
+  - Shoulder Hike Displacement ratio
+  - Torso Rotation Angle mismatch
+  - Posture Stability Index (%)
 
-## 3. Hardware Telemetry & Sensor Fusion Layer
-- **MSV1 Metrics**:
-  - `Force` ($N$ / $0-100\%$)
-  - `Reaction Time` ($s$)
-  - `Accuracy` ($\%$)
-  - `Strike Consistency` ($\%$)
-- **Fusion Formula**:
-  $$\text{Movement Quality} = \max(0, 100 - (\lambda_1 \cdot \text{Lean} + \lambda_2 \cdot \text{Hike} + \lambda_3 \cdot \text{Rotation}))$$
-  $$\text{Session Score} = 0.5 \cdot \text{Movement Quality} + 0.3 \cdot \text{Accuracy} + 0.2 \cdot \text{Consistency}$$
+### 2. Hardware Telemetry Layer
+- **Module**: `frontend/src/services/telemetry/index.ts`.
+- **Adapters**:
+  - `DemoSimulatorAdapter`: Emits realistic, dynamic actuator telemetry (`force`, `reaction_time`, `accuracy`, `consistency`, `timestamp`).
+  - `HardwareInterfaceAdapter`: API abstraction for physical MSV1 foot actuator data streams.
+- **Sanitizer**: `validateTelemetryData` guarantees safe defaults against malformed or missing payloads.
 
-## 4. Generative AI Layer
-- Structured JSON prompt fed to Gemini LLM (with fallback local response generator).
-- Generates 4-part concise clinical session summary:
-  1. *Positive Observations*
-  2. *Measurable Compensation Concerns*
-  3. *Session Performance Trend*
-  4. *Therapist Discussion Point*
+### 3. Sensor Fusion Engine
+- **Module**: `frontend/src/services/fusionEngine.ts`.
+- **Formula**:
+  $$\text{Session Score} = 0.50 \times \text{Movement Quality} + 0.35 \times \text{Performance Score} + 0.15 \times \text{Stability}$$
+- **Output**: Fuses pose compensation and actuator performance into real-time quality scores and synthesized relationship messages.
+
+### 4. Generative AI Reporting & Safety Layer
+- **Backend Service**: `backend/app/ai/llm_report.py`.
+- **Primary LLM**: Google Gemini 1.5 Flash API via REST.
+- **Fallback Engine**: Local rule-based natural language generator.
+- **Safety Enforcement**: Strict non-diagnostic system prompts and fallback text filters.
+- **Localization**: Supports English (`en`) and Malayalam (`ml`).
 
 ---
 
-## Clinical Safety & Disclaimer
-> *"This prototype is designed for rehabilitation monitoring and research demonstration. It is not a diagnostic system and does not replace assessment or clinical decisions by qualified healthcare professionals."*
+## 🔒 Safety & Non-Diagnostic Principles
+
+1. All scores and indicators are labeled as **rehabilitation monitoring metrics**, not medical diagnostic scores.
+2. The AI generator operates under explicit guardrails: no disease diagnosis, no medication prescription, no claims of cure.
+3. Every report card and dashboard screen includes clinical prototype disclaimers.

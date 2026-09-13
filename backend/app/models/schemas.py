@@ -2,15 +2,19 @@ from pydantic import BaseModel, Field
 from typing import List, Optional
 
 class SessionReportRequest(BaseModel):
-    session_id: str
-    movement_quality: float = Field(..., ge=0, le=100)
-    trunk_lean_angle: float
-    shoulder_hike_displacement: float
-    torso_rotation_angle: float
-    force: float
-    reaction_time: float
-    accuracy: float
-    strike_consistency: float
+    session_id: Optional[str] = "ses-default"
+    movement_quality: float = Field(default=80.0, ge=0, le=100)
+    accuracy: float = Field(default=85.0, ge=0, le=100)
+    force: float = Field(default=65.0, ge=0, le=100)
+    reaction_time: float = Field(default=1.2, ge=0.01)
+    trunk_compensation: Optional[str] = "low"
+    shoulder_compensation: Optional[str] = "low"
+    rotation: Optional[str] = "low"
+    trunk_lean_angle: Optional[float] = 0.0
+    shoulder_hike_displacement: Optional[float] = 0.0
+    torso_rotation_angle: Optional[float] = 0.0
+    strike_consistency: Optional[float] = 85.0
+    language: Optional[str] = "en"
 
 class AIReportResponse(BaseModel):
     positiveObservations: List[str]
@@ -18,6 +22,7 @@ class AIReportResponse(BaseModel):
     sessionTrend: str
     therapistDiscussionPoints: List[str]
     disclaimer: str
+    language: str = "en"
 
 class TelemetryData(BaseModel):
     force: float

@@ -25,12 +25,18 @@ export const TelemetryPanel: React.FC<TelemetryPanelProps> = ({
         <div className="flex items-center gap-2">
           <span
             className={`text-[10px] font-bold px-2.5 py-1 rounded-full uppercase border ${
-              telemetry.mode === 'hardware'
-                ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
+              telemetry.mode === 'LIVE HARDWARE' || telemetry.mode === 'hardware'
+                ? telemetry.connectionStatus === 'disconnected'
+                  ? 'bg-rose-500/20 text-rose-300 border-rose-500/40'
+                  : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/40'
                 : 'bg-primary-500/20 text-primary-300 border-primary-500/40'
             }`}
           >
-            {telemetry.mode === 'hardware' ? 'Physical MSV1 Live' : 'MSV1 Demo Telemetry'}
+            {telemetry.mode === 'LIVE HARDWARE' || telemetry.mode === 'hardware'
+              ? telemetry.connectionStatus === 'disconnected'
+                ? 'LIVE HARDWARE (OFFLINE)'
+                : 'LIVE HARDWARE'
+              : 'SIMULATED'}
           </span>
           {onToggleMode && (
             <button
