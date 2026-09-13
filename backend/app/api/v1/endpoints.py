@@ -17,7 +17,11 @@ from app.core.security import create_access_token, decode_access_token
 from app.rag.service import ingest_patient_report, query_rag_pipeline
 from app.voice.provider import get_stt_provider, get_tts_provider
 
+from app.api.v1.endpoints.session import router as session_router
+
 router = APIRouter()
+router.include_router(session_router)
+
 
 # --- IN-MEMORY DEMO DATABASE STORE ---
 DEMO_USER = UserProfile(

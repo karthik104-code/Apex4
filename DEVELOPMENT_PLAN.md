@@ -1,46 +1,79 @@
-# DEVELOPMENT PLAN: AI HEALTHCARE COMPANION
+# MSV1 AI-Assisted Rehabilitation Through Play — Development Plan
 
-## 1. Project Overview & Hackathon Strategy
-**Project Name**: AI Healthcare Companion  
-**Repository**: `https://github.com/karthik104-code/healthcare_hack.git`  
-**Git Author Email**: `cskarthik25cs@cce.edu.in`  
-**Branch**: `main`  
+## Project Overview
+Transformation of the application into **MSV1**, an AI-assisted rehabilitation and monitoring system for foot-operated carrom actuator rehab. The platform combines webcam-based computer vision (MediaPipe Pose landmark tracking), movement compensation detection (trunk lean, shoulder hike, torso rotation), MSV1 hardware telemetry (force, reaction time, accuracy), real-time sensor fusion, and LLM-generated therapist session reports.
 
 ---
 
-## 2. Technical Implementation Phases & Status
+## Architecture & Data Flow
 
-### ✅ Phase 1: Environment & Workspace Foundation
-- Repository initialized and configured under `main` branch.
-- Reusable UI component library created ([Button](file:///c:/Users/Lakshmigauri/Desktop/CSK/healthcare_hack/frontend/src/components/ui/Button.tsx), [Card](file:///c:/Users/Lakshmigauri/Desktop/CSK/healthcare_hack/frontend/src/components/ui/Card.tsx), [Modal](file:///c:/Users/Lakshmigauri/Desktop/CSK/healthcare_hack/frontend/src/components/ui/Modal.tsx), [Toast](file:///c:/Users/Lakshmigauri/Desktop/CSK/healthcare_hack/frontend/src/components/ui/Toast.tsx), [LoadingState](file:///c:/Users/Lakshmigauri/Desktop/CSK/healthcare_hack/frontend/src/components/ui/LoadingState.tsx), [ErrorState](file:///c:/Users/Lakshmigauri/Desktop/CSK/healthcare_hack/frontend/src/components/ui/ErrorState.tsx)).
-- `GET /health` endpoint returning `{"status": "ok"}`.
-- 1-Click Hackathon Demo Authentication and protected routing.
+```
+[Webcam Feed] ──> MediaPipe Pose ──> Pose Landmarks (Shoulders, Torso, Hips)
+                                            │
+                                            ▼
+                               [Compensation Engine] (Trunk Lean, Hike, Rotation)
+                                            │
+[MSV1 Hardware / Simulator] ──> [Hardware Telemetry] (Force, RT, Accuracy)
+                                            │
+                                            ▼
+                                 [Sensor Fusion Engine]
+                                            │
+                                            ▼
+                              [Real-Time Session Quality Score (0-100%)]
+                                            │
+                                            ▼
+                              [FastAPI Backend & LLM Service]
+                                            │
+                                            ▼
+                             [Therapist Dashboard & AI Report]
+```
 
-### ✅ Phase 2: AI Healthcare Assistant
-- `AIProvider` abstraction (`LLMProvider` + `MockProvider` fallback).
-- `/assistant` and `/ai-assistant` chat workspace with conversation history sidebar.
-- Multilingual selector and safety guardrails.
+---
 
-### ✅ Phase 3: Medical Report Intelligence
-- Multi-format document parser (PDF, PNG, JPG, JPEG) with 10MB validation.
-- PyMuPDF OCR lab test parameter extraction (Hemoglobin, Fasting Glucose, Cholesterol, WBC, Vitamin D).
-- Parameter status tagging (`normal`, `high`, `low`, `unknown`) and plain-language patient explanations.
+## Implementation Phases
 
-### ✅ Phase 4: Evidence-Based RAG Layer
-- Document chunking and embedding vector retriever over WHO, ADA, NHLBI, and Endocrine Society clinical guidelines.
-- Semantic retrieval displaying trusted citations in frontend UI alongside AI responses.
+### Phase 1: Core Setup & MediaPipe Pose Integration
+- Install `@mediapipe/tasks-vision` or `@tensorflow-models/pose-detection` in `frontend`.
+- Create `PoseCameraView.tsx` component with live webcam feed rendering and canvas overlay of 33 body pose landmarks.
+- Build `pose/landmarker.ts` helper for smooth client-side pose detection.
 
-### ✅ Phase 5: Voice & Multilingual Healthcare
-- SpeechToText and TextToSpeech provider abstractions.
-- Web Speech API dictation and audio synthesis in English (`en-US`), Malayalam (`ml-IN`), and Hindi (`hi-IN`).
-- Microphone permission error handling and audio playback controls.
+### Phase 2: Biomechanical Compensation Detection Engine
+- Create `pose/compensation.ts` with angle and displacement calculations:
+  - **Trunk Lean**: Angular deviation of mid-shoulder-hip spine line relative to vertical baseline.
+  - **Shoulder Hike**: Vertical asymmetry ratio between left and right acromion landmarks.
+  - **Torso Rotation**: Cross-sectional angle mismatch between shoulder line and hip line.
+  - **Movement Stability**: Variance of torso center of mass over time.
+- Implement baseline calibration screen (`CalibrationPage.tsx`) to capture neutral posture.
 
-### ✅ Phase 6: Health Dashboard & Appointments
-- Complete Patient Dashboard with vitals cards, report highlights, follow-up reminders, recent AI chats, and Recharts trend graphs.
-- Appointments portal with upcoming/completed tabs, reschedule modal, cancel actions, and follow-up date tracking.
+### Phase 3: MSV1 Hardware Telemetry & Demo Simulator Adapter
+- Build `hardwareSimulator.ts` supporting dual modes:
+  - **Mode 1 (Demo Simulation)**: Generates realistic force (N), reaction time (s), accuracy (%), and strike consistency metrics with profile presets (*Normal*, *Fatigue*, *High-Compensation*).
+  - **Mode 2 (Hardware API Adapter)**: Standard REST/WebSocket interface for physical MSV1 hardware integration.
 
-### ✅ Phase 7: Security, Performance & Hackathon Polish
-- Bundle code-splitting with `React.lazy` and `React.Suspense`.
-- Environment variable sanitization (`.gitignore` verified).
-- Full production build audit exiting with code 0.
-- All code pushed to GitHub `main` branch.
+### Phase 4: Real-Time Sensor Fusion & Session Engine
+- Build `fusionEngine.ts` to compute combined Movement Quality Score (0–100%) and Compensation Levels (*Low*, *Medium*, *High*).
+- Build `LiveSessionPage.tsx` integrating live camera feed, skeleton overlay, real-time gauges, telemetry panel, live session score, and session controls.
+
+### Phase 5: FastAPI Backend, Session Storage & LLM Generative AI Report
+- Create Pydantic models for `SessionData`, `PoseMetrics`, `TelemetryData`, and `AIReport`.
+- Build FastAPI endpoints:
+  - `POST /api/v1/sessions/save`
+  - `GET /api/v1/sessions/history`
+  - `POST /api/v1/reports/generate`
+- Implement `llm_report.py` using Gemini API with fallback rule-based natural language generator.
+
+### Phase 6: Therapist Dashboard & Session History
+- Build `TherapistDashboardPage.tsx` with clinical key metrics, compensation trends (Recharts), patient selector, session drill-downs, and 1-click **"Generate AI Session Report"**.
+- Build `LandingPage.tsx` introducing MSV1, hardware explanation, rehabilitation problem statement, hero CTA, and clinical safety disclaimer.
+
+### Phase 7: Verification, UI Polish & Final Hackathon Audit
+- Verify client-side webcam performance, test fallback local reports when API key is missing.
+- Ensure strict clinical safety language throughout UI ("AI-assisted monitoring and decision support, not medical diagnosis").
+- Verify `npx vite build` and `py_compile` pass cleanly.
+
+---
+
+## Rules & Constraints
+- **DO NOT PUSH TO GITHUB** until explicitly directed by the user.
+- Maintain clean separation between simulation adapter and hardware API interface.
+- Ensure all simulated data is explicitly labeled as `"MSV1 Demo Telemetry"`.

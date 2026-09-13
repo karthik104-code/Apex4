@@ -39,10 +39,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
           </div>
           <div>
             <h1 className="font-bold text-sm sm:text-base tracking-tight bg-gradient-to-r from-white via-slate-200 to-primary-400 bg-clip-text text-transparent">
-              {t('app_title')}
+              MSV1 Rehabilitation
             </h1>
             <span className="text-[10px] uppercase tracking-wider font-semibold text-primary-400 block -mt-1">
-              Assistive AI Platform
+              AI Vision & Telemetry System
             </span>
           </div>
         </div>

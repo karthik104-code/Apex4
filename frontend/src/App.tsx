@@ -5,25 +5,18 @@ import { LanguageProvider } from './context/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { LoadingState } from './components/ui/LoadingState';
+import { RehabSession, BaselineCalibration } from './types/rehab';
+import { createDefaultCalibration } from './pose/compensation';
 
-// Lazy-loaded page components for bundle optimization
+// Lazy-loaded page components for MSV1 Rehabilitation Platform
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
-const AuthPage = lazy(() => import('./pages/AuthPage').then(m => ({ default: m.AuthPage })));
-const PatientDashboard = lazy(() => import('./pages/PatientDashboard').then(m => ({ default: m.PatientDashboard })));
-const AIAssistantPage = lazy(() => import('./pages/AIAssistantPage').then(m => ({ default: m.AIAssistantPage })));
-const MedicalReportsPage = lazy(() => import('./pages/MedicalReportsPage').then(m => ({ default: m.MedicalReportsPage })));
-const AppointmentsPage = lazy(() => import('./pages/AppointmentsPage').then(m => ({ default: m.AppointmentsPage })));
-const HealthAnalyticsPage = lazy(() => import('./pages/HealthAnalyticsPage').then(m => ({ default: m.HealthAnalyticsPage })));
-const ProfileSettingsPage = lazy(() => import('./pages/ProfileSettingsPage').then(m => ({ default: m.ProfileSettingsPage })));
-const DoctorDashboardPage = lazy(() => import('./pages/DoctorDashboardPage').then(m => ({ default: m.DoctorDashboardPage })));
+const LiveSessionPage = lazy(() => import('./pages/LiveSessionPage').then(m => ({ default: m.LiveSessionPage })));
+const CalibrationPage = lazy(() => import('./pages/CalibrationPage').then(m => ({ default: m.CalibrationPage })));
+const TherapistDashboardPage = lazy(() => import('./pages/TherapistDashboardPage').then(m => ({ default: m.TherapistDashboardPage })));
+const SessionHistoryPage = lazy(() => import('./pages/SessionHistoryPage').then(m => ({ default: m.SessionHistoryPage })));
 
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isAuthenticated } = useAuth();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-  if (!isAuthenticated) {
-    return <Navigate to="/auth" replace />;
-  }
 
   return (
     <div className="min-h-screen bg-background text-slate-100 flex flex-col">
@@ -39,25 +32,90 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
 };
 
 export const App: React.FC = () => {
+  const [calibration, setCalibration] = useState<BaselineCalibration>(createDefaultCalibration());
+  const [sessions, setSessions] = useState<RehabSession[]>([
+    {
+      id: 's-demo-101',
+      patientId: 'patient-01',
+      patientName: 'Alex Mercer',
+      date: '2026-09-12',
+      durationSeconds: 240,
+      fusionScore: {
+        movementQuality: 82,
+        performanceScore: 84,
+        combinedSessionScore: 83,
+        compensationSummary: 'Medium trunk lean detected during higher force strikes.',
+      },
+      compensationMetrics: {
+        trunkLeanAngle: 12.4,
+        trunkLeanLevel: 'medium',
+        shoulderHikeDisplacement: 0.06,
+        shoulderHikeLevel: 'medium',
+        torsoRotationAngle: 5.2,
+        torsoRotationLevel: 'low',
+        overallStability: 81,
+      },
+      telemetry: {
+        force: 64,
+        reactionTime: 1.24,
+        accuracy: 87,
+        strikeConsistency: 82,
+        mode: 'simulated',
+      },
+      status: 'completed',
+    },
+  ]);
+
+  const handleSessionCompleted = (newSession: RehabSession) => {
+    setSessions((prev) => [newSession, ...prev]);
+  };
+
   return (
     <AuthProvider>
       <LanguageProvider>
         <Router>
-          <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingState message="Initializing Healthcare Companion..." /></div>}>
+          <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingState message="Initializing MSV1 AI Platform..." /></div>}>
             <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<LandingPage />} />
-              <Route path="/auth" element={<AuthPage />} />
-
-              {/* Protected App Routes */}
-              <Route path="/dashboard" element={<ProtectedLayout><PatientDashboard /></ProtectedLayout>} />
-              <Route path="/assistant" element={<ProtectedLayout><AIAssistantPage /></ProtectedLayout>} />
-              <Route path="/ai-assistant" element={<ProtectedLayout><AIAssistantPage /></ProtectedLayout>} />
-              <Route path="/reports" element={<ProtectedLayout><MedicalReportsPage /></ProtectedLayout>} />
-              <Route path="/appointments" element={<ProtectedLayout><AppointmentsPage /></ProtectedLayout>} />
-              <Route path="/analytics" element={<ProtectedLayout><HealthAnalyticsPage /></ProtectedLayout>} />
-              <Route path="/settings" element={<ProtectedLayout><ProfileSettingsPage /></ProtectedLayout>} />
-              <Route path="/doctor-dashboard" element={<ProtectedLayout><DoctorDashboardPage /></ProtectedLayout>} />
+              {/* MSV1 Navigation Routes */}
+              <Route path="/" element={<ProtectedLayout><LandingPage /></ProtectedLayout>} />
+              <Route
+                path="/session"
+                element={
+                  <ProtectedLayout>
+                    <LiveSessionPage
+                      calibration={calibration}
+                      onSessionCompleted={handleSessionCompleted}
+                    />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/calibration"
+                element={
+                  <ProtectedLayout>
+                    <CalibrationPage
+                      calibration={calibration}
+                      onSaveCalibration={setCalibration}
+                    />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedLayout>
+                    <TherapistDashboardPage sessions={sessions} />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/history"
+                element={
+                  <ProtectedLayout>
+                    <SessionHistoryPage sessions={sessions} />
+                  </ProtectedLayout>
+                }
+              />
 
               {/* Fallback Catch-all */}
               <Route path="*" element={<Navigate to="/" replace />} />

@@ -1,10 +1,8 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  LayoutDashboard, Bot, FileText, Calendar, 
-  BarChart3, Settings, Stethoscope, Heart, LogOut
+  Home, PlayCircle, RefreshCw, LayoutDashboard, History, Activity, LogOut
 } from 'lucide-react';
-import { useLanguage } from '../context/LanguageContext';
 import { useAuth } from '../context/AuthContext';
 
 interface SidebarProps {
@@ -13,17 +11,14 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
-  const { t } = useLanguage();
   const { logout } = useAuth();
 
   const navItems = [
-    { path: '/dashboard', label: t('dashboard'), icon: LayoutDashboard },
-    { path: '/ai-assistant', label: t('ai_assistant'), icon: Bot },
-    { path: '/reports', label: t('reports'), icon: FileText },
-    { path: '/appointments', label: t('appointments'), icon: Calendar },
-    { path: '/analytics', label: t('analytics'), icon: BarChart3 },
-    { path: '/doctor-dashboard', label: 'Doctor Dashboard', icon: Stethoscope },
-    { path: '/settings', label: t('settings'), icon: Settings },
+    { path: '/', label: 'Overview', icon: Home },
+    { path: '/session', label: 'Live Rehabilitation', icon: PlayCircle },
+    { path: '/calibration', label: 'Postural Calibration', icon: RefreshCw },
+    { path: '/dashboard', label: 'Therapist Dashboard', icon: LayoutDashboard },
+    { path: '/history', label: 'Session Archive', icon: History },
   ];
 
   return (
@@ -45,11 +40,11 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         <div className="space-y-6">
           <div className="flex items-center gap-2.5 px-3 py-2">
             <div className="w-8 h-8 rounded-lg bg-primary-600/30 border border-primary-500/40 flex items-center justify-center">
-              <Heart className="w-4 h-4 text-primary-400 fill-primary-400/20" />
+              <Activity className="w-4 h-4 text-primary-400" />
             </div>
             <div>
-              <span className="font-bold text-sm text-slate-100 tracking-tight block">Companion Hub</span>
-              <span className="text-[10px] text-slate-400 font-medium">Patient Workspace</span>
+              <span className="font-bold text-sm text-slate-100 tracking-tight block">MSV1 Platform</span>
+              <span className="text-[10px] text-slate-400 font-medium">Rehab Through Play</span>
             </div>
           </div>
 
