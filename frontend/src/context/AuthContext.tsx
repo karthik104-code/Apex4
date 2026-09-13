@@ -13,7 +13,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [user, setUser] = useState<UserProfile | null>({
     id: 'user-demo-101',
-    email: 'therapist@msv1.ai',
+    email: 'therapist@apex4.ai',
     full_name: 'Dr. Alex Vance, PT',
     role: 'patient',
     age: 38,
@@ -26,7 +26,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const login = async (email: string, password: string) => {
     setUser({
       id: 'user-demo-101',
-      email: email || 'therapist@msv1.ai',
+      email: email || 'therapist@apex4.ai',
       full_name: 'Dr. Alex Vance, PT',
       role: 'patient',
       age: 38,

@@ -67,7 +67,7 @@ export const apiService = {
       access_token: 'demo-token',
       user: {
         id: 'user-demo-101',
-        email: email || 'therapist@msv1.ai',
+        email: email || 'therapist@apex4.ai',
         full_name: 'Dr. Alex Vance, PT',
         role: 'patient' as const,
         age: 38,
@@ -82,7 +82,7 @@ export const apiService = {
   getCurrentUser: async (): Promise<UserProfile> => {
     return {
       id: 'user-demo-101',
-      email: 'therapist@msv1.ai',
+      email: 'therapist@apex4.ai',
       full_name: 'Dr. Alex Vance, PT',
       role: 'patient',
       age: 38,

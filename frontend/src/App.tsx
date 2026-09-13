@@ -88,7 +88,7 @@ export const App: React.FC = () => {
     <AuthProvider>
       <LanguageProvider>
         <Router>
-          <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingState message="Initializing MSV1 AI Platform..." /></div>}>
+          <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingState message="Initializing APEX 4..." /></div>}>
             <Routes>
               {/* MSV1 Navigation Routes */}
               <Route path="/" element={<ProtectedLayout><LandingPage /></ProtectedLayout>} />

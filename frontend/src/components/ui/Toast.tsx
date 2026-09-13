@@ -20,14 +20,14 @@ export const Toast: React.FC<ToastProps> = ({
   }, [onClose, duration]);
 
   const typeStyles = {
-    success: 'bg-emerald-500/20 border-emerald-500/40 text-emerald-200',
-    error: 'bg-rose-500/20 border-rose-500/40 text-rose-200',
-    info: 'bg-primary-500/20 border-primary-500/40 text-primary-200'
+    success: 'bg-[#EAF8F1] border border-emerald-200 text-[#166534]',
+    error: 'bg-[#FEE2E2] border border-red-200 text-[#EF4444]',
+    info: 'bg-[#EAF2FF] border border-blue-200 text-[#2563EB]'
   };
 
   return (
-    <div className={`fixed bottom-6 right-6 z-50 p-4 rounded-2xl border backdrop-blur-md shadow-2xl flex items-center gap-3 text-xs sm:text-sm animate-in slide-in-from-bottom-5 ${typeStyles[type]}`}>
-      {type === 'success' ? <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" /> : <AlertCircle className="w-5 h-5 text-rose-400 shrink-0" />}
+    <div className={`fixed bottom-6 right-6 z-50 p-4 rounded-xl shadow-lg flex items-center gap-3 text-xs sm:text-sm animate-in slide-in-from-bottom-5 ${typeStyles[type]}`}>
+      {type === 'success' ? <CheckCircle2 className="w-5 h-5 text-[#22A06B] shrink-0" /> : <AlertCircle className="w-5 h-5 text-[#EF4444] shrink-0" />}
       <span className="font-semibold">{message}</span>
       <button onClick={onClose} className="p-1 hover:opacity-75">
         <X className="w-4 h-4" />

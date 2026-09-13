@@ -7,29 +7,48 @@ export default {
   theme: {
     extend: {
       colors: {
-        background: "#0F172A",
-        surface: "#1E293B",
-        surfaceHover: "#334155",
+        background: "#F7F9F8",
+        surface: "#FFFFFF",
+        surfaceHover: "#F8FAFC",
+        border: "#E5E7EB",
         primary: {
-          50: "#f0fdfa",
-          100: "#ccfbf1",
-          500: "#14b8a6",
-          600: "#0d9488",
-          700: "#0f766e",
+          DEFAULT: "#2563EB",
+          50: "#EAF2FF",
+          100: "#DBEAFE",
+          500: "#2563EB",
+          600: "#1D4ED8",
+          700: "#1E40AF",
         },
-        accent: {
-          blue: "#3b82f6",
-          emerald: "#10b981",
-          rose: "#f43f5e",
-          amber: "#f59e0b",
-          purple: "#8b5cf6"
+        medical: {
+          DEFAULT: "#22A06B",
+          light: "#EAF8F1",
+          dark: "#166534",
+        },
+        ai: {
+          DEFAULT: "#7C6CE7",
+          light: "#F2F0FF",
+          dark: "#5B46E0",
+        },
+        amber: {
+          DEFAULT: "#F59E0B",
+          light: "#FEF3C7",
+        },
+        danger: {
+          DEFAULT: "#EF4444",
+          light: "#FEE2E2",
+        },
+        slateText: {
+          primary: "#111827",
+          secondary: "#64748B",
+          muted: "#94A3B8",
         }
       },
       fontFamily: {
-        sans: ['Inter', 'Outfit', 'sans-serif'],
+        sans: ['Inter', 'system-ui', '-apple-system', 'sans-serif'],
       },
-      backdropBlur: {
-        xs: '2px',
+      boxShadow: {
+        'swiss': '0 1px 2px 0 rgba(0, 0, 0, 0.03)',
+        'swiss-hover': '0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03)',
       }
     },
   },

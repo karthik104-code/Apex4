@@ -24,25 +24,23 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
   const unreadCount = notifications.filter(n => !n.is_read).length;
 
   return (
-    <header className="h-16 border-b border-slate-800/80 bg-surface/80 backdrop-blur-md sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between">
+    <header className="h-16 border-b border-[#E5E7EB] bg-white sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between shadow-xs">
       <div className="flex items-center gap-3">
         <button
           onClick={onToggleSidebar}
-          className="lg:hidden p-2 text-slate-400 hover:text-white rounded-lg hover:bg-slate-800"
+          className="lg:hidden p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100"
         >
           <Menu className="w-5 h-5" />
         </button>
 
-        <div className="flex items-center gap-2.5">
-          <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-primary-600 to-accent-emerald flex items-center justify-center shadow-lg shadow-primary-600/20">
-            <Activity className="w-5 h-5 text-white" />
-          </div>
+        <div className="flex items-center gap-3">
+          <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-9 h-9 object-contain" />
           <div>
-            <h1 className="font-bold text-sm sm:text-base tracking-tight bg-gradient-to-r from-white via-slate-200 to-primary-400 bg-clip-text text-transparent">
-              MSV1 Rehabilitation
+            <h1 className="font-bold text-sm sm:text-base tracking-tight text-[#111827]">
+              APEX 4
             </h1>
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-primary-400 block -mt-1">
-              AI Vision & Telemetry System
+            <span className="text-[10px] uppercase tracking-wider font-semibold text-[#2563EB] block -mt-0.5">
+              Rehabilitation, reimagined.
             </span>
           </div>
         </div>
@@ -52,10 +50,10 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
         {/* SOS Emergency Button */}
         <button
           onClick={() => setShowSOSModal(true)}
-          className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-500/20 hover:bg-rose-500/30 border border-rose-500/50 text-rose-300 text-xs font-bold transition-all animate-pulse"
+          className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-[#FEE2E2] hover:bg-[#FCA5A5]/30 border border-[#FECACA] text-[#EF4444] text-xs font-bold transition-all"
           title="Emergency Medical Assistance"
         >
-          <AlertTriangle className="w-3.5 h-3.5 text-rose-400" />
+          <AlertTriangle className="w-3.5 h-3.5 text-[#EF4444]" />
           <span>SOS</span>
         </button>
 
@@ -63,34 +61,34 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
         <div className="relative">
           <button
             onClick={() => setShowLangMenu(!showLangMenu)}
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-xs font-medium text-slate-300 transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white hover:bg-slate-50 border border-[#E5E7EB] text-xs font-medium text-[#111827] transition-all shadow-xs"
           >
-            <Globe className="w-3.5 h-3.5 text-primary-400" />
+            <Globe className="w-3.5 h-3.5 text-[#2563EB]" />
             <span className="uppercase">{language}</span>
           </button>
 
           {showLangMenu && (
-            <div className="absolute right-0 mt-2 w-40 glass-panel rounded-xl shadow-xl py-1 z-50 border border-slate-700/80 text-xs">
+            <div className="absolute right-0 mt-2 w-40 bg-white rounded-xl shadow-lg py-1 z-50 border border-[#E5E7EB] text-xs">
               <button
                 onClick={() => { setLanguage('en'); setShowLangMenu(false); }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-800/80 flex items-center justify-between"
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-[#111827]"
               >
                 <span>English</span>
-                {language === 'en' && <Check className="w-3.5 h-3.5 text-primary-400" />}
+                {language === 'en' && <Check className="w-3.5 h-3.5 text-[#2563EB]" />}
               </button>
               <button
                 onClick={() => { setLanguage('ml'); setShowLangMenu(false); }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-800/80 flex items-center justify-between"
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-[#111827]"
               >
                 <span>മലയാളം (ML)</span>
-                {language === 'ml' && <Check className="w-3.5 h-3.5 text-primary-400" />}
+                {language === 'ml' && <Check className="w-3.5 h-3.5 text-[#2563EB]" />}
               </button>
               <button
                 onClick={() => { setLanguage('hi'); setShowLangMenu(false); }}
-                className="w-full text-left px-3.5 py-2 hover:bg-slate-800/80 flex items-center justify-between"
+                className="w-full text-left px-3.5 py-2 hover:bg-slate-50 flex items-center justify-between text-[#111827]"
               >
                 <span>हिन्दी (HI)</span>
-                {language === 'hi' && <Check className="w-3.5 h-3.5 text-primary-400" />}
+                {language === 'hi' && <Check className="w-3.5 h-3.5 text-[#2563EB]" />}
               </button>
             </div>
           )}
@@ -100,30 +98,30 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
         <div className="relative">
           <button
             onClick={() => setShowNotifs(!showNotifs)}
-            className="relative p-2 rounded-xl bg-slate-800/80 hover:bg-slate-700/80 border border-slate-700/60 text-slate-300 transition-all"
+            className="relative p-2 rounded-lg bg-white hover:bg-slate-50 border border-[#E5E7EB] text-[#111827] transition-all shadow-xs"
           >
-            <Bell className="w-4 h-4 text-slate-300" />
+            <Bell className="w-4 h-4 text-slate-600" />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-4 h-4 bg-accent-rose text-white text-[10px] font-bold rounded-full flex items-center justify-center">
+              <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#EF4444] text-white text-[10px] font-bold rounded-full flex items-center justify-center">
                 {unreadCount}
               </span>
             )}
           </button>
 
           {showNotifs && (
-            <div className="absolute right-0 mt-2 w-80 sm:w-96 glass-panel rounded-2xl shadow-2xl p-4 z-50 border border-slate-700/80">
-              <div className="flex items-center justify-between pb-3 border-b border-slate-800">
-                <h3 className="font-semibold text-sm text-slate-200">Notifications</h3>
-                <span className="text-xs text-primary-400 font-medium">{unreadCount} new</span>
+            <div className="absolute right-0 mt-2 w-80 sm:w-96 bg-white rounded-xl shadow-xl p-4 z-50 border border-[#E5E7EB]">
+              <div className="flex items-center justify-between pb-3 border-b border-slate-100">
+                <h3 className="font-semibold text-sm text-[#111827]">Notifications</h3>
+                <span className="text-xs text-[#2563EB] font-medium">{unreadCount} new</span>
               </div>
               <div className="mt-3 space-y-2.5 max-h-72 overflow-y-auto pr-1">
                 {notifications.map(n => (
-                  <div key={n.id} className="p-2.5 rounded-xl bg-slate-800/40 border border-slate-700/40 hover:bg-slate-800/70 transition-all">
+                  <div key={n.id} className="p-2.5 rounded-lg bg-slate-50 border border-slate-100 hover:bg-slate-100/60 transition-all">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-xs font-semibold text-slate-200">{n.title}</span>
-                      <span className="text-[10px] text-slate-400">{n.created_at}</span>
+                      <span className="text-xs font-semibold text-[#111827]">{n.title}</span>
+                      <span className="text-[10px] text-slate-500">{n.created_at}</span>
                     </div>
-                    <p className="text-xs text-slate-300 opacity-90">{n.message}</p>
+                    <p className="text-xs text-slate-600">{n.message}</p>
                   </div>
                 ))}
               </div>
@@ -132,41 +130,41 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
         </div>
 
         {/* User Avatar */}
-        <div className="flex items-center gap-2.5 pl-2 border-l border-slate-800">
-          <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-slate-700 to-slate-600 flex items-center justify-center border border-slate-600/80">
-            <User className="w-4 h-4 text-slate-200" />
+        <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+          <div className="w-8 h-8 rounded-full bg-[#EAF2FF] border border-blue-100 flex items-center justify-center text-[#2563EB]">
+            <User className="w-4 h-4" />
           </div>
           <div className="hidden sm:block text-left">
-            <span className="text-xs font-semibold text-slate-200 block leading-tight">{user?.full_name || 'John Doe'}</span>
-            <span className="text-[10px] text-slate-400 capitalize">{user?.role || 'Patient'}</span>
+            <span className="text-xs font-semibold text-[#111827] block leading-tight">{user?.full_name || 'John Doe'}</span>
+            <span className="text-[10px] text-slate-500 capitalize">{user?.role || 'Patient'}</span>
           </div>
         </div>
       </div>
 
       {/* SOS Emergency Modal */}
       {showSOSModal && (
-        <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-          <div className="glass-panel p-6 rounded-3xl max-w-md w-full border border-rose-500/40 space-y-4 text-left relative animate-in fade-in zoom-in-95">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-xs z-50 flex items-center justify-center p-4">
+          <div className="bg-white p-6 rounded-2xl max-w-md w-full border border-[#E5E7EB] shadow-2xl space-y-4 text-left relative animate-in fade-in zoom-in-95">
             <button 
               onClick={() => setShowSOSModal(false)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600"
             >
               <X className="w-5 h-5" />
             </button>
 
-            <div className="flex items-center gap-3 text-rose-400">
-              <div className="w-12 h-12 rounded-2xl bg-rose-500/20 border border-rose-500/40 flex items-center justify-center">
-                <AlertTriangle className="w-6 h-6 text-rose-400" />
+            <div className="flex items-center gap-3 text-[#EF4444]">
+              <div className="w-12 h-12 rounded-xl bg-[#FEE2E2] border border-[#FECACA] flex items-center justify-center">
+                <AlertTriangle className="w-6 h-6 text-[#EF4444]" />
               </div>
               <div>
-                <h3 className="text-lg font-bold text-slate-100">Emergency Medical Support</h3>
-                <p className="text-xs text-rose-300">If you are experiencing severe symptoms, act immediately.</p>
+                <h3 className="text-lg font-bold text-[#111827]">Emergency Medical Support</h3>
+                <p className="text-xs text-[#EF4444]">If you are experiencing severe symptoms, act immediately.</p>
               </div>
             </div>
 
-            <div className="p-4 rounded-2xl bg-slate-900/90 border border-slate-800 space-y-2 text-xs text-slate-300">
-              <p className="font-semibold text-rose-300">⚠️ Call Emergency Services if experiencing:</p>
-              <ul className="list-disc list-inside space-y-1 text-slate-400">
+            <div className="p-4 rounded-xl bg-slate-50 border border-slate-200 space-y-2 text-xs text-slate-700">
+              <p className="font-semibold text-[#EF4444]">⚠️ Call Emergency Services if experiencing:</p>
+              <ul className="list-disc list-inside space-y-1 text-slate-600">
                 <li>Severe chest pain or difficulty breathing</li>
                 <li>Sudden numbness or loss of consciousness</li>
                 <li>Uncontrolled bleeding or severe trauma</li>
@@ -176,14 +174,14 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
             <div className="space-y-2">
               <a
                 href="tel:911"
-                className="w-full flex items-center justify-center gap-2 py-3 rounded-2xl bg-rose-600 hover:bg-rose-500 text-white font-bold text-sm transition-all"
+                className="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-[#EF4444] hover:bg-red-600 text-white font-bold text-sm transition-all"
               >
                 <PhoneCall className="w-4 h-4" />
                 <span>Call National Emergency Services (911 / 108)</span>
               </a>
               <button
                 onClick={() => setShowSOSModal(false)}
-                className="w-full py-2.5 rounded-2xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-xs transition-all"
+                className="w-full py-2.5 rounded-lg bg-slate-100 hover:bg-slate-200 text-slate-700 font-medium text-xs transition-all"
               >
                 Close Warning Window
               </button>
