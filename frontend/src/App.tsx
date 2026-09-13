@@ -1,14 +1,15 @@
 import React, { useState, Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider, useAuth } from './context/AuthContext';
+import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { Navbar } from './components/Navbar';
 import { Sidebar } from './components/Sidebar';
 import { LoadingState } from './components/ui/LoadingState';
+import { ApexSplashLoader } from './components/ui/ApexSplashLoader';
 import { RehabSession, BaselineCalibration } from './types/rehab';
 import { createDefaultCalibration } from './pose/compensation';
 
-// Lazy-loaded page components for MSV1 Rehabilitation Platform
+// Lazy-loaded page components for APEX 4 Rehabilitation Platform
 const LandingPage = lazy(() => import('./pages/LandingPage').then(m => ({ default: m.LandingPage })));
 const LiveSessionPage = lazy(() => import('./pages/LiveSessionPage').then(m => ({ default: m.LiveSessionPage })));
 const CalibrationPage = lazy(() => import('./pages/CalibrationPage').then(m => ({ default: m.CalibrationPage })));
@@ -19,7 +20,7 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-background text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#F7F9F8] text-[#111827] flex flex-col">
       <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
       <div className="flex-1 flex overflow-hidden">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
@@ -87,10 +88,13 @@ export const App: React.FC = () => {
   return (
     <AuthProvider>
       <LanguageProvider>
+        {/* Full-Screen Site Opening Animation Splash */}
+        <ApexSplashLoader autoDismissMs={1800} />
+
         <Router>
-          <Suspense fallback={<div className="min-h-screen bg-background flex items-center justify-center"><LoadingState message="Initializing APEX 4..." /></div>}>
+          <Suspense fallback={<div className="min-h-screen bg-[#F7F9F8] flex items-center justify-center"><LoadingState message="Initializing APEX 4..." /></div>}>
             <Routes>
-              {/* MSV1 Navigation Routes */}
+              {/* APEX 4 Navigation Routes */}
               <Route path="/" element={<ProtectedLayout><LandingPage /></ProtectedLayout>} />
               <Route
                 path="/session"
