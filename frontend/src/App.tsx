@@ -15,6 +15,7 @@ const LiveSessionPage = lazy(() => import('./pages/LiveSessionPage').then(m => (
 const CalibrationPage = lazy(() => import('./pages/CalibrationPage').then(m => ({ default: m.CalibrationPage })));
 const TherapistDashboardPage = lazy(() => import('./pages/TherapistDashboardPage').then(m => ({ default: m.TherapistDashboardPage })));
 const SessionHistoryPage = lazy(() => import('./pages/SessionHistoryPage').then(m => ({ default: m.SessionHistoryPage })));
+const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
 
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -96,6 +97,7 @@ export const App: React.FC = () => {
             <Routes>
               {/* APEX 4 Navigation Routes */}
               <Route path="/" element={<ProtectedLayout><LandingPage /></ProtectedLayout>} />
+              <Route path="/login" element={<ProtectedLayout><LoginPage /></ProtectedLayout>} />
               <Route
                 path="/session"
                 element={

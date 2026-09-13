@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Bell, Globe, User, Activity, Menu, Check, AlertTriangle, PhoneCall, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage, LanguageCode } from '../context/LanguageContext';
@@ -10,6 +11,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
+  const navigate = useNavigate();
   const { user } = useAuth();
   const { language, setLanguage, t } = useLanguage();
   const [notifications, setNotifications] = useState<NotificationItem[]>([]);
@@ -129,14 +131,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
           )}
         </div>
 
-        {/* User Avatar */}
-        <div className="flex items-center gap-2.5 pl-2 border-l border-slate-200">
+        {/* User Avatar & Auth Link */}
+        <div
+          onClick={() => navigate('/login')}
+          className="flex items-center gap-2.5 pl-2 border-l border-slate-200 cursor-pointer hover:opacity-80 transition-opacity"
+          title="Account Login / User Profile"
+        >
           <div className="w-8 h-8 rounded-full bg-[#EAF2FF] border border-blue-100 flex items-center justify-center text-[#2563EB]">
             <User className="w-4 h-4" />
           </div>
           <div className="hidden sm:block text-left">
-            <span className="text-xs font-semibold text-[#111827] block leading-tight">{user?.full_name || 'John Doe'}</span>
-            <span className="text-[10px] text-slate-500 capitalize">{user?.role || 'Patient'}</span>
+            <span className="text-xs font-semibold text-[#111827] block leading-tight">{user?.full_name || 'Dr. Alex Mercer'}</span>
+            <span className="text-[10px] text-[#2563EB] font-bold capitalize">Sign In / Account</span>
           </div>
         </div>
       </div>
