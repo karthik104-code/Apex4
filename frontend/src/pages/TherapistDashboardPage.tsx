@@ -125,6 +125,9 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
               <span className="font-extrabold text-base tracking-tight text-[#111827]">APEX 4</span>
               <span className="text-slate-300">|</span>
               <h1 className="text-xl font-bold text-[#111827]">Therapist Dashboard</h1>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+                AVAILABLE
+              </span>
             </div>
             <p className="text-xs text-slate-500 mt-0.5 font-medium">
               Information over decoration. Objective rehabilitation tracking & AI insights.
