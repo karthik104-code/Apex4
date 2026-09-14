@@ -64,9 +64,13 @@ export const CalibrationPage: React.FC<CalibrationPageProps> = ({
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Left 2 Cols: Live Camera Calibration Feed */}
         <div className="lg:col-span-2 space-y-4">
-          <PoseCameraView onPoseDetected={setCurrentLandmarks} isCalibrating={isCapturing} />
+          <PoseCameraView
+            onPoseDetected={setCurrentLandmarks}
+            isCalibrating={isCapturing}
+            calibrationCompleted={calibration.isCalibrated}
+            onCalibrate={handleCapture}
+          />
 
           <div className="flex items-center justify-between gap-4 p-4 rounded-2xl bg-white border border-[#E5E7EB] shadow-xs">
             <div className="flex items-center gap-3">

@@ -21,12 +21,14 @@ const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) 
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="min-h-screen bg-[#F7F9F8] text-[#111827] flex flex-col">
+    <div className="h-screen h-dvh max-h-screen max-h-dvh bg-[#F7F9F8] text-[#111827] flex flex-col overflow-hidden">
       <Navbar onToggleSidebar={() => setSidebarOpen(!sidebarOpen)} />
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex overflow-hidden relative">
         <Sidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8 overflow-y-auto max-w-7xl mx-auto w-full">
-          {children}
+        <main className="flex-1 overflow-y-auto w-full h-full p-4 sm:p-6 lg:p-8">
+          <div className="max-w-7xl mx-auto h-full">
+            {children}
+          </div>
         </main>
       </div>
     </div>

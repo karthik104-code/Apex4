@@ -6,6 +6,8 @@ import { useLanguage, LanguageCode } from '../context/LanguageContext';
 import { apiService } from '../services/api';
 import { NotificationItem } from '../types/healthcare';
 
+import { TelemetrySourceBadge } from './TelemetrySourceBadge';
+
 interface NavbarProps {
   onToggleSidebar?: () => void;
 }
@@ -49,6 +51,9 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
       </div>
 
       <div className="flex items-center gap-3">
+        {/* Telemetry Source Badge & Controls */}
+        <TelemetrySourceBadge />
+
         {/* SOS Emergency Button */}
         <button
           onClick={() => setShowSOSModal(true)}

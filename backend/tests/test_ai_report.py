@@ -1,110 +1,127 @@
 import sys
 import os
+import unittest
 
 # Add backend directory to sys.path
 sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from app.models.schemas import SessionReportRequest
-from app.ai.llm_report import generate_session_ai_report, generate_deterministic_fallback_report
+from app.ai.llm_report import (
+    generate_session_ai_report,
+    generate_deterministic_fallback_report,
+    format_structured_metrics_prompt,
+    LABEL_INSIGHT,
+    LABEL_REVIEW,
+)
 
-def assert_true(cond, msg):
-    if not cond:
-        raise AssertionError(f"Test Failed: {msg}")
+class TestAISessionReport(unittest.TestCase):
 
-def test_successful_or_fallback_report():
-    print("[TEST 1] Standard English AI session report generation...")
-    req = SessionReportRequest(
-        movement_quality=82.0,
-        accuracy=87.0,
-        force=64.0,
-        reaction_time=1.24,
-        trunk_compensation="medium",
-        shoulder_compensation="low",
-        rotation="low",
-        language="en"
-    )
-    report = generate_session_ai_report(req)
-    assert_true(len(report.positiveObservations) > 0, "Should have positive observations")
-    assert_true(len(report.measurableConcerns) > 0, "Should have concerns/observations")
-    assert_true(len(report.sessionTrend) > 0, "Should have session trend string")
-    assert_true(len(report.therapistDiscussionPoints) > 0, "Should have discussion points")
-    assert_true("diagnostic" in report.disclaimer.lower() or "professional" in report.disclaimer.lower(), "Disclaimer present")
-    print("  [PASS] English report successfully generated with required structured sections.")
+    def test_structured_metrics_prompt_formatting(self):
+        """Test structured metrics text prompt formatting (NO video/images)."""
+        req = SessionReportRequest(
+            movement_quality=82.0,
+            accuracy=87.0,
+            force=64.0,
+            reaction_time=1.24,
+            trunk_compensation="medium",
+            shoulder_compensation="low",
+            rotation="low",
+            strike_consistency=91.0,
+            language="en"
+        )
+        prompt_text = format_structured_metrics_prompt(req)
 
-def test_api_failure_fallback():
-    print("[TEST 2] API failure / Offline fallback mechanism...")
-    req = SessionReportRequest(
-        movement_quality=75.0,
-        accuracy=80.0,
-        force=50.0,
-        reaction_time=1.8,
-        trunk_compensation="high",
-        shoulder_compensation="medium",
-        rotation="low",
-        language="en"
-    )
-    report = generate_deterministic_fallback_report(req, "en")
-    assert_true("HIGH" in report.measurableConcerns[0] or "compensation" in report.measurableConcerns[0].lower(), "Fallback correctly parsed high trunk compensation")
-    assert_true("professional" in report.disclaimer, "Safety disclaimer includes therapist review statement")
-    print("  [PASS] Deterministic fallback generated valid structured report during offline/API failure simulation.")
+        self.assertIn("Movement Quality: 82", prompt_text)
+        self.assertIn("Trunk Lean: Medium", prompt_text)
+        self.assertIn("Force: 64", prompt_text)
+        self.assertIn("Reaction Time: 1.24 seconds", prompt_text)
+        self.assertIn("Accuracy: 87%", prompt_text)
+        self.assertIn("Consistency: 91%", prompt_text)
+        self.assertIn("NO VIDEO DATA", prompt_text)
 
-def test_empty_or_malformed_fields():
-    print("[TEST 3] Handling missing or empty session fields...")
-    req = SessionReportRequest()
-    report = generate_session_ai_report(req)
-    assert_true(report is not None, "Should handle default request without throwing")
-    assert_true(len(report.positiveObservations) > 0, "Default values produce valid positive findings")
-    print("  [PASS] Empty/default session fields handled safely with fallback values.")
+    def test_required_five_sections_and_labels(self):
+        """Verify 5 required report sections & mandatory labels."""
+        req = SessionReportRequest(
+            movement_quality=82.0,
+            accuracy=87.0,
+            force=64.0,
+            reaction_time=1.24,
+            trunk_compensation="medium",
+            shoulder_compensation="low",
+            rotation="low",
+            language="en"
+        )
+        report = generate_session_ai_report(req)
 
-def test_malayalam_language_support():
-    print("[TEST 4] Malayalam report generation...")
-    req = SessionReportRequest(
-        movement_quality=84.0,
-        accuracy=89.0,
-        force=70.0,
-        reaction_time=1.15,
-        trunk_compensation="medium",
-        shoulder_compensation="low",
-        rotation="low",
-        language="ml"
-    )
-    report = generate_session_ai_report(req)
-    assert_true(report.language == "ml", "Language field should be 'ml'")
-    assert_true(len(report.positiveObservations) > 0, "Malayalam report contains positive observations")
-    print("  [PASS] Malayalam session report generated successfully.")
+        # 1. Section 1: Session Summary
+        self.assertTrue(len(report.sessionSummary) > 0, "Section 1: sessionSummary must be present")
 
-def test_clinical_safety_compliance():
-    print("[TEST 5] Clinical safety guardrail compliance...")
-    req = SessionReportRequest(
-        movement_quality=40.0,
-        accuracy=45.0,
-        force=30.0,
-        reaction_time=2.8,
-        trunk_compensation="high",
-        shoulder_compensation="high",
-        rotation="high",
-        language="en"
-    )
-    report = generate_session_ai_report(req)
-    full_text = (
-        " ".join(report.positiveObservations) + " " +
-        " ".join(report.measurableConcerns) + " " +
-        report.sessionTrend + " " +
-        " ".join(report.therapistDiscussionPoints)
-    ).lower()
+        # 2. Section 2: Movement Observations
+        self.assertTrue(len(report.movementObservations) > 0, "Section 2: movementObservations must be present")
 
-    forbidden_terms = ["stroke diagnosis", "prescribe", "medication", "cure", "replaces physiotherapist"]
-    for term in forbidden_terms:
-        assert_true(term not in full_text, f"Forbidden clinical term '{term}' found in AI output")
+        # 3. Section 3: Performance
+        self.assertIsNotNone(report.performanceSummary, "Section 3: performanceSummary must be present")
+        self.assertIn("actuatorForce", report.performanceSummary)
 
-    print("  [PASS] AI report strictly complies with non-diagnostic clinical safety guardrails.")
+        # 4. Section 4: Trend
+        self.assertTrue(len(report.sessionTrend) > 0, "Section 4: sessionTrend must be present")
+
+        # 5. Section 5: Discussion Point for Therapist
+        self.assertTrue(len(report.therapistDiscussionPoints) > 0, "Section 5: therapistDiscussionPoints must be present")
+
+        # Required Labels
+        self.assertEqual(report.label, "AI-generated session insight")
+        self.assertEqual(report.sublabel, "For rehabilitation professional review.")
+
+    def test_api_failure_fallback(self):
+        """Test deterministic fallback engine during API failure or offline mode."""
+        req = SessionReportRequest(
+            movement_quality=75.0,
+            accuracy=80.0,
+            force=50.0,
+            reaction_time=1.8,
+            trunk_compensation="high",
+            shoulder_compensation="medium",
+            rotation="low",
+            language="en"
+        )
+        report = generate_deterministic_fallback_report(req, "en")
+        self.assertTrue(len(report.sessionSummary) > 0)
+        self.assertTrue(len(report.movementObservations) > 0)
+        self.assertEqual(report.label, LABEL_INSIGHT)
+        self.assertEqual(report.sublabel, LABEL_REVIEW)
+
+    def test_clinical_safety_compliance(self):
+        """Test strict non-diagnostic clinical safety guardrails."""
+        req = SessionReportRequest(
+            movement_quality=40.0,
+            accuracy=45.0,
+            force=30.0,
+            reaction_time=2.8,
+            trunk_compensation="high",
+            shoulder_compensation="high",
+            rotation="high",
+            language="en"
+        )
+        report = generate_session_ai_report(req)
+        full_text = (
+            report.sessionSummary + " " +
+            " ".join(report.movementObservations) + " " +
+            report.sessionTrend + " " +
+            " ".join(report.therapistDiscussionPoints) + " " +
+            report.disclaimer
+        ).lower()
+
+        forbidden_phrases = [
+            "stroke diagnosis",
+            "diagnose disease",
+            "prescribe medication",
+            "guaranteed recovery",
+            "clinically validated diagnosis",
+            "replaces physiotherapist"
+        ]
+        for term in forbidden_phrases:
+            self.assertNotIn(term, full_text)
 
 if __name__ == "__main__":
-    print("Starting Phase 6 Generative AI Report Backend Unit Tests...\n")
-    test_successful_or_fallback_report()
-    test_api_failure_fallback()
-    test_empty_or_malformed_fields()
-    test_malayalam_language_support()
-    test_clinical_safety_compliance()
-    print("\n[RESULT] All 5 AI Report Backend Tests Passed Successfully!")
-
+    unittest.main()

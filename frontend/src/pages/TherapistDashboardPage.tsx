@@ -25,7 +25,7 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
   const navigate = useNavigate();
   const [selectedPatient, setSelectedPatient] = useState('Alex Mercer');
   const [selectedSessionForDetails, setSelectedSessionForDetails] = useState<RehabSession | null>(null);
-  const [activeChartMetric, setActiveChartMetric] = useState<'quality' | 'accuracy' | 'compensation' | 'reactionTime'>('quality');
+  const [activeChartMetric, setActiveChartMetric] = useState<'quality' | 'accuracy' | 'compensation' | 'reactionTime' | 'consistency'>('quality');
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   // Default fallback demo sessions if empty
@@ -36,9 +36,10 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
       patientName: 'Alex Mercer',
       date: 'Sep 12, 2026',
       durationSeconds: 240,
+      source: 'demo',
       fusionScore: { movementQuality: 82, performanceScore: 84, combinedSessionScore: 83, compensationSummary: 'Medium trunk lean detected.' },
       compensationMetrics: { trunkLeanAngle: 12.4, trunkLeanLevel: 'medium', shoulderHikeDisplacement: 0.06, shoulderHikeLevel: 'medium', torsoRotationAngle: 5.2, torsoRotationLevel: 'low', overallStability: 81 },
-      telemetry: { force: 64, reactionTime: 1.24, accuracy: 87, strikeConsistency: 91, mode: 'simulated' },
+      telemetry: { force: 64, reactionTime: 1.24, accuracy: 87, strikeConsistency: 91, mode: 'simulated', source: 'demo' },
       status: 'completed',
     },
     {
@@ -47,9 +48,10 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
       patientName: 'Alex Mercer',
       date: 'Sep 10, 2026',
       durationSeconds: 240,
+      source: 'demo',
       fusionScore: { movementQuality: 78, performanceScore: 81, combinedSessionScore: 80, compensationSummary: 'Medium trunk lean & shoulder hike.' },
       compensationMetrics: { trunkLeanAngle: 14.1, trunkLeanLevel: 'medium', shoulderHikeDisplacement: 0.07, shoulderHikeLevel: 'medium', torsoRotationAngle: 5.8, torsoRotationLevel: 'low', overallStability: 79 },
-      telemetry: { force: 62, reactionTime: 1.35, accuracy: 83, strikeConsistency: 88, mode: 'simulated' },
+      telemetry: { force: 62, reactionTime: 1.35, accuracy: 83, strikeConsistency: 88, mode: 'simulated', source: 'demo' },
       status: 'completed',
     },
     {
@@ -58,9 +60,10 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
       patientName: 'Alex Mercer',
       date: 'Sep 08, 2026',
       durationSeconds: 250,
+      source: 'demo',
       fusionScore: { movementQuality: 74, performanceScore: 78, combinedSessionScore: 76, compensationSummary: 'Medium trunk lean detected.' },
       compensationMetrics: { trunkLeanAngle: 15.8, trunkLeanLevel: 'medium', shoulderHikeDisplacement: 0.08, shoulderHikeLevel: 'medium', torsoRotationAngle: 6.4, torsoRotationLevel: 'medium', overallStability: 75 },
-      telemetry: { force: 60, reactionTime: 1.48, accuracy: 81, strikeConsistency: 85, mode: 'simulated' },
+      telemetry: { force: 60, reactionTime: 1.48, accuracy: 81, strikeConsistency: 85, mode: 'simulated', source: 'demo' },
       status: 'completed',
     },
     {
@@ -69,9 +72,10 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
       patientName: 'Alex Mercer',
       date: 'Sep 06, 2026',
       durationSeconds: 220,
+      source: 'demo',
       fusionScore: { movementQuality: 71, performanceScore: 73, combinedSessionScore: 72, compensationSummary: 'High trunk lean on initial strikes.' },
       compensationMetrics: { trunkLeanAngle: 18.2, trunkLeanLevel: 'high', shoulderHikeDisplacement: 0.09, shoulderHikeLevel: 'medium', torsoRotationAngle: 7.1, torsoRotationLevel: 'medium', overallStability: 72 },
-      telemetry: { force: 55, reactionTime: 1.62, accuracy: 76, strikeConsistency: 80, mode: 'simulated' },
+      telemetry: { force: 55, reactionTime: 1.62, accuracy: 76, strikeConsistency: 80, mode: 'simulated', source: 'demo' },
       status: 'completed',
     },
   ];
@@ -81,17 +85,20 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
   // Recharts Dataset
   const chartData = [...allSessions].reverse().map((s, i) => {
     const rt = s.telemetry.reaction_time !== undefined ? s.telemetry.reaction_time : s.telemetry.reactionTime;
+    const cons = s.telemetry.strikeConsistency || s.telemetry.consistency || 88;
     return {
       name: s.date.split(',')[0] || `Session ${i + 1}`,
       movementQuality: s.fusionScore.movementQuality,
       accuracy: s.telemetry.accuracy,
       trunkLean: s.compensationMetrics.trunkLeanAngle,
       reactionTime: rt,
+      consistency: cons,
     };
   });
 
   const latestRt = (latestSession.telemetry.reaction_time !== undefined ? latestSession.telemetry.reaction_time : latestSession.telemetry.reactionTime).toFixed(2);
-  const latestConsistency = latestSession.telemetry.strikeConsistency || 91;
+  const latestConsistency = latestSession.telemetry.strikeConsistency || latestSession.telemetry.consistency || 91;
+  const isLatestHardware = latestSession.source === 'hardware' || latestSession.telemetry.source === 'hardware' || latestSession.telemetry.hardwareConnected;
 
   return (
     <div className="space-y-6 max-w-7xl mx-auto overflow-x-hidden">
@@ -154,7 +161,16 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
         {/* 1. Latest Session */}
         <div className="bg-white p-4 rounded-xl border border-[#E5E7EB] shadow-xs space-y-1">
-          <span className="text-[11px] text-slate-500 font-semibold block">Latest Session</span>
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] text-slate-500 font-semibold block">Latest Session</span>
+            <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${
+              isLatestHardware
+                ? 'bg-[#EAF8F1] text-[#22A06B] border-emerald-200'
+                : 'bg-[#F8FAFC] text-slate-500 border-slate-200'
+            }`}>
+              {isLatestHardware ? '● Hardware' : '◌ Demo'}
+            </span>
+          </div>
           <div className="text-base font-bold text-[#111827] truncate">{latestSession.date}</div>
           <span className="text-[10px] text-slate-400 block">{Math.round(latestSession.durationSeconds / 60)} mins duration</span>
         </div>
@@ -210,7 +226,7 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
               </div>
 
               {/* Clean Metric Switcher */}
-              <div className="flex items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-[#E5E7EB] text-[11px]">
+              <div className="flex flex-wrap items-center gap-1.5 p-1 rounded-xl bg-slate-100 border border-[#E5E7EB] text-[11px]">
                 <button
                   onClick={() => setActiveChartMetric('quality')}
                   className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
@@ -251,6 +267,16 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
                 >
                   Reaction (s)
                 </button>
+                <button
+                  onClick={() => setActiveChartMetric('consistency')}
+                  className={`px-2.5 py-1 rounded-lg font-bold transition-all ${
+                    activeChartMetric === 'consistency'
+                      ? 'bg-white text-[#2563EB] shadow-xs'
+                      : 'text-slate-600 hover:text-[#111827]'
+                  }`}
+                >
+                  Consistency (%)
+                </button>
               </div>
             </div>
 
@@ -277,6 +303,9 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
                   {activeChartMetric === 'reactionTime' && (
                     <Line type="monotone" dataKey="reactionTime" name="Reaction Time (s)" stroke="#7C6CE7" strokeWidth={3} dot={{ r: 5 }} />
                   )}
+                  {activeChartMetric === 'consistency' && (
+                    <Line type="monotone" dataKey="consistency" name="Consistency (%)" stroke="#2563EB" strokeWidth={3} dot={{ r: 5 }} />
+                  )}
                 </LineChart>
               </ResponsiveContainer>
             </div>
@@ -292,6 +321,8 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
             <div className="space-y-2.5 text-xs">
               {allSessions.map((s) => {
                 const rtVal = s.telemetry.reaction_time !== undefined ? s.telemetry.reaction_time : s.telemetry.reactionTime;
+                const isHw = s.source === 'hardware' || s.telemetry.source === 'hardware' || s.telemetry.hardwareConnected;
+
                 return (
                   <div
                     key={s.id}
@@ -303,7 +334,16 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
                         <Activity className="w-4 h-4" />
                       </div>
                       <div>
-                        <span className="font-bold text-[#111827] block">{s.date}</span>
+                        <div className="flex items-center gap-2">
+                          <span className="font-bold text-[#111827]">{s.date}</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${
+                            isHw
+                              ? 'bg-[#EAF8F1] text-[#22A06B] border-emerald-200'
+                              : 'bg-white text-slate-600 border-slate-200'
+                          }`}>
+                            {isHw ? '● Hardware' : '◌ Demo'}
+                          </span>
+                        </div>
                         <span className="text-[11px] text-slate-500">Duration: {Math.round(s.durationSeconds / 60)} mins</span>
                       </div>
                     </div>

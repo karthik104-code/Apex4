@@ -8,6 +8,6 @@ services:
       - key: ENVIRONMENT
         value: production
       - key: PROJECT_NAME
-        value: AI Healthcare Companion API
+        value: APEX 4 Rehabilitation Platform API
       - key: CORS_ORIGINS
         value: '["*"]'
