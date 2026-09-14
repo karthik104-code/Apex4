@@ -1,9 +1,10 @@
 import React from 'react';
 import { NavLink } from 'react-router-dom';
 import { 
-  Home, PlayCircle, RefreshCw, LayoutDashboard, History, Activity, LogOut
+  Home, PlayCircle, RefreshCw, LayoutDashboard, History, Activity, LogOut, Settings as SettingsIcon
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import apexLogo from '../assets/logo';
 
 interface SidebarProps {
   isOpen: boolean;
@@ -19,6 +20,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { path: '/calibration', label: 'Postural Calibration', icon: RefreshCw },
     { path: '/dashboard', label: 'Therapist Dashboard', icon: LayoutDashboard },
     { path: '/history', label: 'Session Archive', icon: History },
+    { path: '/hardware', label: 'Hardware HUD', icon: Activity },
+    { path: '/settings', label: 'Settings', icon: SettingsIcon },
   ];
 
   return (
@@ -39,7 +42,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       `}>
         <div className="space-y-6">
           <div className="flex items-center gap-3 px-3 py-2">
-            <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
+            <img src={apexLogo} alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
             <div>
               <span className="font-bold text-sm text-[#111827] tracking-tight block">APEX 4</span>
               <span className="text-[10px] text-slate-500 font-medium">Rehabilitation, reimagined.</span>

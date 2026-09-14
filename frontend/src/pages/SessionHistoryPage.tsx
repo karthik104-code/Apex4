@@ -28,6 +28,9 @@ export const SessionHistoryPage: React.FC<SessionHistoryPageProps> = ({ sessions
             <span className="px-2.5 py-0.5 rounded-full bg-[#EAF2FF] text-[#2563EB] text-[10px] font-semibold uppercase tracking-wider border border-blue-200">
               Session Archive
             </span>
+            <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-50 text-emerald-700 border border-emerald-200">
+              AVAILABLE
+            </span>
           </div>
           <h1 className="text-2xl font-bold text-[#111827]">Patient Session History Archive</h1>
           <p className="text-xs text-slate-500 mt-1">

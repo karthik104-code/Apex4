@@ -36,7 +36,10 @@ class ArduinoSerialAdapter:
             return ["COM_SIMULATED_1", "COM_SIMULATED_2"]
         try:
             ports = serial.tools.list_ports.comports()
-            return [p.device for p in ports]
+            # Prioritize USB devices (like Arduino) over Bluetooth COM ports
+            usb_ports = [p.device for p in ports if p.vid is not None]
+            other_ports = [p.device for p in ports if p.vid is None]
+            return usb_ports + other_ports
         except Exception:
             return []
 
@@ -47,25 +50,26 @@ class ArduinoSerialAdapter:
             self.active_port = None
             return False
 
-        target_port = port or (self.list_ports()[0] if self.list_ports() else None)
-        if not target_port or target_port.startswith("COM_SIMULATED"):
-            self.is_connected = False
-            self.active_port = None
-            return False
+        ports_to_try = [port] if port else self.list_ports()
 
-        try:
-            conn = serial.Serial(target_port, baudrate=baud_rate, timeout=0.1)
-            self.serial_conn = conn
-            self.is_connected = True
-            self.active_port = target_port
-            logger.info(f"Successfully connected to Arduino on {target_port} at {baud_rate} baud.")
-            return True
-        except Exception as e:
-            logger.debug(f"Serial port connection attempt on {target_port}: {e}")
-            self.is_connected = False
-            self.serial_conn = None
-            self.active_port = None
-            return False
+        for target_port in ports_to_try:
+            if not target_port or target_port.startswith("COM_SIMULATED"):
+                continue
+
+            try:
+                conn = serial.Serial(target_port, baudrate=baud_rate, timeout=0.1)
+                self.serial_conn = conn
+                self.is_connected = True
+                self.active_port = target_port
+                logger.info(f"Successfully connected to Arduino on {target_port} at {baud_rate} baud.")
+                return True
+            except Exception as e:
+                logger.debug(f"Serial port connection attempt on {target_port} failed: {e}")
+                
+        self.is_connected = False
+        self.serial_conn = None
+        self.active_port = None
+        return False
 
     def disconnect(self):
         """Disconnect serial connection."""

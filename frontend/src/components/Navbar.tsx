@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { Bell, Globe, User, Activity, Menu, Check, AlertTriangle, PhoneCall, X } from 'lucide-react';
+import { useNavigate, NavLink } from 'react-router-dom';
+import { Bell, Globe, User, Activity, Menu, Check, AlertTriangle, PhoneCall, X, PlayCircle, LayoutDashboard, History, Settings as SettingsIcon } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage, LanguageCode } from '../context/LanguageContext';
 import { apiService } from '../services/api';
 import { NotificationItem } from '../types/healthcare';
 
 import { TelemetrySourceBadge } from './TelemetrySourceBadge';
+import apexLogo from '../assets/logo';
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -29,25 +30,75 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
 
   return (
     <header className="h-16 border-b border-[#E5E7EB] bg-white sticky top-0 z-40 px-4 sm:px-6 flex items-center justify-between shadow-xs">
-      <div className="flex items-center gap-3">
-        <button
-          onClick={onToggleSidebar}
-          className="lg:hidden p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100"
-        >
-          <Menu className="w-5 h-5" />
-        </button>
-
+      <div className="flex items-center gap-6">
         <div className="flex items-center gap-3">
-          <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-9 h-9 object-contain" />
-          <div>
-            <h1 className="font-bold text-sm sm:text-base tracking-tight text-[#111827]">
-              APEX 4
-            </h1>
-            <span className="text-[10px] uppercase tracking-wider font-semibold text-[#2563EB] block -mt-0.5">
-              Rehabilitation, reimagined.
-            </span>
-          </div>
+          <button
+            onClick={onToggleSidebar}
+            className="lg:hidden p-2 text-slate-500 hover:text-slate-900 rounded-lg hover:bg-slate-100"
+          >
+            <Menu className="w-5 h-5" />
+          </button>
+
+          <NavLink to="/" className="flex items-center gap-3">
+            <img src={apexLogo} alt="APEX 4 Logo" className="w-9 h-9 object-contain" />
+            <div>
+              <h1 className="font-bold text-sm sm:text-base tracking-tight text-[#111827]">
+                APEX 4
+              </h1>
+              <span className="text-[10px] uppercase tracking-wider font-semibold text-[#2563EB] block -mt-0.5">
+                Rehabilitation, reimagined.
+              </span>
+            </div>
+          </NavLink>
         </div>
+
+        {/* Desktop Quick Nav Links */}
+        <nav className="hidden xl:flex items-center space-x-1 pl-4 border-l border-slate-200">
+          <NavLink
+            to="/"
+            className={({ isActive }) => `px-3 py-1.5 rounded-lg text-xs font-semibold transition-all ${
+              isActive ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            Home
+          </NavLink>
+          <NavLink
+            to="/session"
+            className={({ isActive }) => `px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              isActive ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <PlayCircle className="w-3.5 h-3.5" />
+            <span>Live Session</span>
+          </NavLink>
+          <NavLink
+            to="/history"
+            className={({ isActive }) => `px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              isActive ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <History className="w-3.5 h-3.5" />
+            <span>Sessions</span>
+          </NavLink>
+          <NavLink
+            to="/dashboard"
+            className={({ isActive }) => `px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              isActive ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <LayoutDashboard className="w-3.5 h-3.5" />
+            <span>Dashboard</span>
+          </NavLink>
+          <NavLink
+            to="/settings"
+            className={({ isActive }) => `px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 ${
+              isActive ? 'bg-blue-50 text-blue-700 font-bold' : 'text-slate-600 hover:text-slate-900 hover:bg-slate-50'
+            }`}
+          >
+            <SettingsIcon className="w-3.5 h-3.5" />
+            <span>Settings</span>
+          </NavLink>
+        </nav>
       </div>
 
       <div className="flex items-center gap-3">

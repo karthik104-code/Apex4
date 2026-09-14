@@ -79,17 +79,17 @@ export const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({ sessio
           </div>
 
           <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] space-y-1">
-            <span className="text-slate-500 font-medium block">Hardware Accuracy</span>
-            <span className="text-2xl font-black text-[#2563EB]">{session.telemetry.accuracy}%</span>
-          </div>
-
-          <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] space-y-1">
-            <span className="text-slate-500 font-medium block">Trunk Lean Deviation</span>
+            <span className="text-slate-500 font-medium block">Lateral Trunk Deviation</span>
             <span className="text-2xl font-black text-[#D97706]">{session.compensationMetrics.trunkLeanAngle}°</span>
           </div>
 
           <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] space-y-1">
-            <span className="text-slate-500 font-medium block">Reaction Time</span>
+            <span className="text-slate-500 font-medium block">Force Output</span>
+            <span className="text-2xl font-black text-[#2563EB]">{session.telemetry.force}%</span>
+          </div>
+
+          <div className="p-3.5 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] space-y-1">
+            <span className="text-slate-500 font-medium block">Reaction Latency</span>
             <span className="text-2xl font-black text-[#7C6CE7]">{reactionTimeVal.toFixed(2)}s</span>
           </div>
         </div>
@@ -100,24 +100,28 @@ export const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({ sessio
           <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] space-y-3">
             <h4 className="font-bold text-xs text-[#2563EB] uppercase tracking-wider flex items-center gap-1.5">
               <Activity className="w-4 h-4" />
-              Computer Vision Pose Metrics
+              Postural Alignment & Kinematics
             </h4>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-[#E5E7EB]">
-                <span className="text-slate-500">Trunk Lean Angle:</span>
+                <span className="text-slate-500">Lateral Trunk Deviation:</span>
                 <span className="font-bold text-[#111827]">{session.compensationMetrics.trunkLeanAngle}° ({session.compensationMetrics.trunkLeanLevel.toUpperCase()})</span>
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-[#E5E7EB]">
-                <span className="text-slate-500">Shoulder Hike Displacement:</span>
-                <span className="font-bold text-[#111827]">{(session.compensationMetrics.shoulderHikeDisplacement * 100).toFixed(1)}% ({session.compensationMetrics.shoulderHikeLevel.toUpperCase()})</span>
+                <span className="text-slate-500">Anterior Trunk Inclination:</span>
+                <span className="font-bold text-[#111827]">{session.compensationMetrics.anteriorInclinationRatio || 0.08} ratio</span>
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-[#E5E7EB]">
-                <span className="text-slate-500">Torso Rotation Angle:</span>
+                <span className="text-slate-500">Shoulder Elevation Asymmetry:</span>
+                <span className="font-bold text-[#111827]">{session.compensationMetrics.shoulderHikeDisplacement} ({session.compensationMetrics.shoulderHikeLevel.toUpperCase()})</span>
+              </div>
+              <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-[#E5E7EB]">
+                <span className="text-slate-500">Trunk Rotation:</span>
                 <span className="font-bold text-[#111827]">{session.compensationMetrics.torsoRotationAngle}° ({session.compensationMetrics.torsoRotationLevel.toUpperCase()})</span>
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-[#E5E7EB]">
-                <span className="text-slate-500">Posture Stability:</span>
-                <span className="font-bold text-[#22A06B]">{session.compensationMetrics.overallStability}%</span>
+                <span className="text-slate-500">Postural Stability:</span>
+                <span className="font-bold text-[#22A06B]">{session.compensationMetrics.overallStability || 85}%</span>
               </div>
             </div>
           </div>
@@ -126,15 +130,15 @@ export const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({ sessio
           <div className="p-4 rounded-xl bg-[#F8FAFC] border border-[#E5E7EB] space-y-3">
             <h4 className="font-bold text-xs text-[#7C6CE7] uppercase tracking-wider flex items-center gap-1.5">
               <Cpu className="w-4 h-4" />
-              APEX 4 Actuator Telemetry
+              MSV1 Hardware Telemetry & Dynamics
             </h4>
             <div className="space-y-2 text-xs">
               <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-[#E5E7EB]">
-                <span className="text-slate-500">Actuator Force Output:</span>
+                <span className="text-slate-500">Force Output:</span>
                 <span className="font-bold text-[#111827]">{session.telemetry.force}%</span>
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-[#E5E7EB]">
-                <span className="text-slate-500">Reaction Time:</span>
+                <span className="text-slate-500">Reaction Latency:</span>
                 <span className="font-bold text-[#7C6CE7]">{reactionTimeVal.toFixed(2)}s</span>
               </div>
               <div className="flex justify-between items-center p-2 rounded-lg bg-white border border-[#E5E7EB]">

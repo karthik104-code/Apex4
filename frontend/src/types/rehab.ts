@@ -9,7 +9,9 @@ export type CompensationLevel = 'low' | 'medium' | 'high';
 
 export interface CompensationMetrics {
   trunkLeanAngle: number; // Degrees deviation from vertical
+  trunkLeanDirection?: 'left' | 'right' | 'neutral';
   trunkLeanLevel: CompensationLevel;
+  anteriorInclinationRatio?: number;
   shoulderHikeDisplacement: number; // Normalized height asymmetry
   shoulderHikeLevel: CompensationLevel;
   torsoRotationAngle: number; // Angle mismatch between shoulders and hips
@@ -41,12 +43,20 @@ export interface HardwareTelemetry {
   mode: TelemetryMode | 'simulated' | 'hardware';
   profilePreset?: 'normal' | 'fatigue' | 'high_compensation';
   connectionStatus?: 'connected' | 'disconnected' | 'simulated';
-  leftForce?: number;
-  rightForce?: number;
-  rudder?: number;
+  rawLeftForce?: number; // 0-255 raw from HID report[0]
+  rawRightForce?: number; // 0-255 raw from HID report[1]
+  rawRudder?: number; // 0-255 raw from HID report[2]
+  leftForce?: number; // 0-255 calibrated
+  rightForce?: number; // 0-255 calibrated
+  rudder?: number; // 0-255 calibrated
   hardwareConnected?: boolean;
   pedalsConnected?: boolean;
   arduinoConnected?: boolean;
+  hidStatus?: 'CONNECTED' | 'DISCONNECTED' | 'RECONNECTING';
+  arduinoStatus?: 'CONNECTED' | 'DISCONNECTED' | 'RECONNECTING';
+  port?: string | null;
+  vendorId?: string;
+  productId?: string;
   source?: 'hardware' | 'simulated' | 'demo';
 }
 
@@ -57,7 +67,61 @@ export interface FusionScore {
   compensationSummary: string;
 }
 
+export interface PosturalParameterItem {
+  parameter: string;
+  observedValue: string;
+  referenceThreshold: string;
+  interpretation: string;
+}
+
+export interface CompensationReportItem {
+  pattern: string;
+  magnitude: string;
+  frequency: string;
+  phase: string;
+  details: string;
+}
+
+export interface MotorPerformanceReportItem {
+  metric: string;
+  value: string;
+  unit: string;
+  interpretation: string;
+}
+
+export interface BilateralPerformanceItem {
+  leftValue?: string;
+  rightValue?: string;
+  difference?: string;
+  interpretation: string;
+}
+
+export interface MovementQualityReportSection {
+  score: number;
+  label: string;
+  explanation: string;
+}
+
 export interface AIReport {
+  sessionId?: string;
+  sessionDate?: string;
+  sessionDuration?: string;
+  dataSource?: string;
+  poseAnalysisSource?: string;
+  sessionOverview?: string;
+  posturalAssessment?: PosturalParameterItem[];
+  movementCompensation?: CompensationReportItem[];
+  motorPerformance?: MotorPerformanceReportItem[];
+  bilateralPerformance?: BilateralPerformanceItem;
+  movementQuality?: MovementQualityReportSection;
+  temporalAnalysis?: string[];
+  aiObservations?: string[];
+  professionalReviewPoints?: string[];
+  limitations?: string;
+  safetyNotice?: string;
+  language?: string;
+
+  // Backward compatibility fields
   sessionSummary?: string;
   movementObservations?: string[];
   performanceSummary?: {
@@ -67,15 +131,16 @@ export interface AIReport {
     consistency?: string;
     [key: string]: any;
   };
-  sessionTrend: string;
-  therapistDiscussionPoints: string[];
-  positiveObservations: string[];
-  measurableConcerns: string[];
-  disclaimer: string;
+  sessionTrend?: string;
+  therapistDiscussionPoints?: string[];
+  positiveObservations?: string[];
+  measurableConcerns?: string[];
+  disclaimer?: string;
   label?: string;
   sublabel?: string;
-  language?: string;
 }
+
+import { StructuredSessionAnalysis } from '../analytics/types';
 
 export type SessionSource = 'hardware' | 'demo';
 
@@ -87,6 +152,7 @@ export interface RecordedSessionData {
   telemetry: HardwareTelemetry;
   vision: CompensationMetrics;
   analytics: FusionScore | any;
+  structuredAnalysis?: StructuredSessionAnalysis;
   source: SessionSource;
   status: 'completed' | 'invalid';
   sampleCount?: number;
@@ -106,6 +172,7 @@ export interface RehabSession {
   compensationMetrics: CompensationMetrics;
   telemetry: HardwareTelemetry;
   recordedSessionData?: RecordedSessionData;
+  structuredAnalysis?: StructuredSessionAnalysis;
   aiReport?: AIReport;
   status: 'completed' | 'in_progress' | 'invalid';
 }

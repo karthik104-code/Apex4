@@ -58,11 +58,22 @@ class APEX4HardwareBridgeClient {
     };
   }
 
+  private get backendUrl() {
+    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  }
+
+  private get wsBackendUrl() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.hostname}:8000`;
+  }
+
   public async fetchStatus(): Promise<HardwareBridgeStatus> {
     try {
-      const res = await fetch('/api/v1/hardware/status');
+      const res = await fetch(`${this.backendUrl}/api/v1/hardware/status`);
       if (res.ok) {
         const data = await res.json();
+        data.connected = !!data.pedalsConnected;
+        data.mode = data.connected ? 'real' : 'demo';
         this.updateStatus(data);
         return this.status;
       }
@@ -81,13 +92,15 @@ class APEX4HardwareBridgeClient {
 
   public async connectHardware(port?: string, baudRate = 9600): Promise<HardwareBridgeStatus> {
     try {
-      const res = await fetch('/api/v1/hardware/connect', {
+      const res = await fetch(`${this.backendUrl}/api/v1/hardware/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ port, baudRate }),
       });
       if (res.ok) {
         const data = await res.json();
+        data.connected = !!data.pedalsConnected;
+        data.mode = data.connected ? 'real' : 'demo';
         this.updateStatus(data);
         return this.status;
       }
@@ -99,9 +112,11 @@ class APEX4HardwareBridgeClient {
 
   public async disconnectHardware(): Promise<HardwareBridgeStatus> {
     try {
-      const res = await fetch('/api/v1/hardware/disconnect', { method: 'POST' });
+      const res = await fetch(`${this.backendUrl}/api/v1/hardware/disconnect`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
+        data.connected = !!data.pedalsConnected;
+        data.mode = data.connected ? 'real' : 'demo';
         this.updateStatus(data);
         return this.status;
       }
@@ -113,7 +128,7 @@ class APEX4HardwareBridgeClient {
 
   public async calibrate(zeroLeft = 0, zeroRight = 0): Promise<boolean> {
     try {
-      const res = await fetch('/api/v1/hardware/calibrate', {
+      const res = await fetch(`${this.backendUrl}/api/v1/hardware/calibrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ zeroLeft, zeroRight }),
@@ -129,9 +144,7 @@ class APEX4HardwareBridgeClient {
       this.ws.close();
     }
 
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    const host = window.location.host || 'localhost:8000';
-    const wsUrl = `${protocol}//${host}/api/v1/hardware/ws`;
+    const wsUrl = `${this.wsBackendUrl}/api/v1/hardware/ws`;
 
     try {
       const socket = new WebSocket(wsUrl);
@@ -155,26 +168,26 @@ class APEX4HardwareBridgeClient {
             strikeConsistency: raw.strikeConsistency ?? 82,
             consistency: raw.strikeConsistency ?? 82,
             timestamp: raw.timestamp || new Date().toISOString(),
-            mode: raw.source === 'hardware' ? 'hardware' : 'simulated',
-            connectionStatus: raw.connected ? 'connected' : 'simulated',
+            mode: raw.pedalsConnected ? 'hardware' : 'simulated',
+            connectionStatus: raw.pedalsConnected ? 'connected' : 'simulated',
             leftForce: raw.leftForce ?? 0,
             rightForce: raw.rightForce ?? 0,
             rudder: raw.rudder ?? 0,
-            hardwareConnected: raw.connected ?? false,
+            hardwareConnected: !!raw.pedalsConnected,
             pedalsConnected: raw.pedalsConnected ?? false,
             arduinoConnected: raw.arduinoConnected ?? false,
-            source: raw.source ?? 'simulated',
+            source: raw.pedalsConnected ? 'hardware' : 'simulated',
           };
 
           this.latestTelemetry = telemetry;
           this.telemetryListeners.forEach((fn) => fn(telemetry));
 
           this.updateStatus({
-            connected: raw.connected ?? false,
+            connected: !!raw.pedalsConnected,
             pedalsConnected: raw.pedalsConnected ?? false,
             arduinoConnected: raw.arduinoConnected ?? false,
             port: raw.port ?? null,
-            mode: raw.source === 'hardware' ? 'real' : 'demo',
+            mode: raw.pedalsConnected ? 'real' : 'demo',
           });
         } catch (err) {
           console.error('Error parsing hardware WebSocket frame:', err);

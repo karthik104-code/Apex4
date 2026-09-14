@@ -53,6 +53,9 @@ yarn-error.log*
 .env.production.local
 dist/
 dist-ssr/
+dist-desktop/
+backend/dist/
+backend/build/
 *.local
 
 # IDE & System

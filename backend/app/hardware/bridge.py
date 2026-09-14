@@ -16,11 +16,11 @@ except ImportError:
     logger.info("pyserial not installed; serial communication will run in simulation mode.")
 
 try:
-    import hid
+    import hid  # type: ignore[import]
     HAS_HID = True
-except ImportError:
+except Exception as e:
     HAS_HID = False
-    logger.info("hidapi not installed; HID pedal controller will run in simulation mode.")
+    logger.info(f"hidapi not available ({type(e).__name__}: {e}); HID pedal controller will run in simulation mode.")
 
 
 class APEX4HardwareBridge:
@@ -73,13 +73,27 @@ class APEX4HardwareBridge:
         self._subscribers: List[Callable[[Dict[str, Any]], None]] = []
 
     def start(self):
-        """Start the background hardware reading loop."""
+        """Start the background hardware reading loop and auto-connect HID pedals."""
         with self._lock:
             if not self._running:
                 self._running = True
                 self._thread = threading.Thread(target=self._worker_loop, daemon=True)
                 self._thread.start()
                 logger.info("APEX 4 Hardware Bridge background thread started.")
+
+        # Auto-connect HID pedals on startup (outside lock to avoid deadlock)
+        if HAS_HID:
+            try:
+                dev = hid.device()
+                dev.open(self.PEDAL_VENDOR_ID, self.PEDAL_PRODUCT_ID)
+                dev.set_nonblocking(True)
+                with self._lock:
+                    self._hid_device = dev
+                    self.pedals_connected = True
+                    self.mode = "real"
+                logger.info("Auto-connected to HID Pedal device (0x68e:0xf2) on startup")
+            except Exception as e:
+                logger.info(f"No HID pedal found on startup ({e}); will retry in background loop")
 
     def stop(self):
         """Stop background worker and close handles."""
@@ -228,6 +242,20 @@ class APEX4HardwareBridge:
             tick += 1
             time.sleep(0.05)  # 20 Hz update frequency
 
+            # Auto-reconnect HID pedals if lost
+            if not self.pedals_connected and HAS_HID and tick % 20 == 0:
+                try:
+                    dev = hid.device()
+                    dev.open(self.PEDAL_VENDOR_ID, self.PEDAL_PRODUCT_ID)
+                    dev.set_nonblocking(True)
+                    with self._lock:
+                        self._hid_device = dev
+                        self.pedals_connected = True
+                        self.mode = "real"
+                    logger.info("Auto-reconnected to HID Pedal device")
+                except Exception:
+                    pass
+
             # Read physical HID device if connected
             if self.pedals_connected and self._hid_device:
                 try:
@@ -247,7 +275,15 @@ class APEX4HardwareBridge:
                         # Send control packet to Arduino
                         self.send_arduino_packet(self.left_force, self.right_force)
                 except Exception as e:
-                    logger.warning(f"Error reading HID pedal data: {e}")
+                    logger.warning(f"Error reading HID pedal data (disconnected?): {e}")
+                    with self._lock:
+                        self.pedals_connected = False
+                        if self._hid_device:
+                            try:
+                                self._hid_device.close()
+                            except Exception:
+                                pass
+                            self._hid_device = None
 
             # If running in Demo Mode, generate realistic dynamic telemetry
             if not self.pedals_connected and not self.arduino_connected:
