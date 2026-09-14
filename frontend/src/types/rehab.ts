@@ -43,12 +43,20 @@ export interface HardwareTelemetry {
   mode: TelemetryMode | 'simulated' | 'hardware';
   profilePreset?: 'normal' | 'fatigue' | 'high_compensation';
   connectionStatus?: 'connected' | 'disconnected' | 'simulated';
-  leftForce?: number;
-  rightForce?: number;
-  rudder?: number;
+  rawLeftForce?: number; // 0-255 raw from HID report[0]
+  rawRightForce?: number; // 0-255 raw from HID report[1]
+  rawRudder?: number; // 0-255 raw from HID report[2]
+  leftForce?: number; // 0-255 calibrated
+  rightForce?: number; // 0-255 calibrated
+  rudder?: number; // 0-255 calibrated
   hardwareConnected?: boolean;
   pedalsConnected?: boolean;
   arduinoConnected?: boolean;
+  hidStatus?: 'CONNECTED' | 'DISCONNECTED' | 'RECONNECTING';
+  arduinoStatus?: 'CONNECTED' | 'DISCONNECTED' | 'RECONNECTING';
+  port?: string | null;
+  vendorId?: string;
+  productId?: string;
   source?: 'hardware' | 'simulated' | 'demo';
 }
 
