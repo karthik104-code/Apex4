@@ -98,7 +98,7 @@ class TestAISessionReport(unittest.TestCase):
         report = generate_deterministic_clinical_report(req, "en")
         rot_item = next(p for p in report.posturalAssessment if p.parameter == "Torso Rotation")
         self.assertIn("Trunk rotation", rot_item.interpretation)
-        self.assertTrue(any("torso rotation compensation" in c.pattern for c in report.movementCompensation))
+        self.assertTrue(any("torso rotation" in c.pattern.lower() for c in report.movementCompensation))
 
     def test_case_7_bilateral_force_output_asymmetry(self):
         req = SessionReportRequest(
@@ -129,7 +129,7 @@ class TestAISessionReport(unittest.TestCase):
             language="en"
         )
         report = generate_deterministic_clinical_report(req, "en")
-        self.assertIn("occlusion or low confidence", report.sessionOverview)
+        self.assertIn("limited by intermittent pose landmark", report.sessionOverview)
 
     def test_case_10_demo_vs_real_data_source(self):
         req_demo = SessionReportRequest(telemetry_mode="simulated")

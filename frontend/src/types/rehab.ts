@@ -98,7 +98,7 @@ export interface AIReport {
   sessionDuration?: string;
   dataSource?: string;
   poseAnalysisSource?: string;
-  sessionOverview: string;
+  sessionOverview?: string;
   posturalAssessment?: PosturalParameterItem[];
   movementCompensation?: CompensationReportItem[];
   motorPerformance?: MotorPerformanceReportItem[];
