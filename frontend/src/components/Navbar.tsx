@@ -7,6 +7,7 @@ import { apiService } from '../services/api';
 import { NotificationItem } from '../types/healthcare';
 
 import { TelemetrySourceBadge } from './TelemetrySourceBadge';
+import apexLogo from '../assets/logo';
 
 interface NavbarProps {
   onToggleSidebar?: () => void;
@@ -39,7 +40,7 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar }) => {
           </button>
 
           <NavLink to="/" className="flex items-center gap-3">
-            <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-9 h-9 object-contain" />
+            <img src={apexLogo} alt="APEX 4 Logo" className="w-9 h-9 object-contain" />
             <div>
               <h1 className="font-bold text-sm sm:text-base tracking-tight text-[#111827]">
                 APEX 4

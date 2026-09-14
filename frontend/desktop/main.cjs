@@ -128,13 +128,15 @@ function killBackend() {
   }
 }
 
-function createWindow() {
+  const iconPath = path.join(__dirname, '..', 'public', 'apex4-logo.png');
+
   mainWindow = new BrowserWindow({
     width: 1440,
     height: 920,
     minWidth: 1024,
     minHeight: 700,
     title: 'APEX 4 — Rehabilitation Assessment Platform',
+    icon: fs.existsSync(iconPath) ? iconPath : undefined,
     backgroundColor: '#090d16',
     autoHideMenuBar: true,
     show: false,

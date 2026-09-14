@@ -4,6 +4,7 @@ import { Sparkles, Mail, Lock, User, Building, Phone, ShieldCheck, ArrowRight, C
 import { useAuth } from '../context/AuthContext';
 import { Button } from '../components/ui/Button';
 import { Toast } from '../components/ui/Toast';
+import apexLogo from '../assets/logo';
 
 export const LoginPage: React.FC = () => {
   const navigate = useNavigate();
@@ -96,7 +97,7 @@ export const LoginPage: React.FC = () => {
         {/* Brand Header */}
         <div className="text-center space-y-3">
           <div className="inline-flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-10 h-10 object-contain" />
+            <img src={apexLogo} alt="APEX 4 Logo" className="w-10 h-10 object-contain" />
             <span className="font-extrabold text-2xl tracking-tight text-[#111827]">APEX 4</span>
           </div>
 

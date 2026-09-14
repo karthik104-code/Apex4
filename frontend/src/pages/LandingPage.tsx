@@ -22,6 +22,7 @@ import {
   User,
 } from 'lucide-react';
 import { Button } from '../components/ui/Button';
+import apexLogo from '../assets/logo';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
@@ -40,7 +41,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto flex items-center justify-between">
           {/* Left Logo */}
           <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/')}>
-            <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
+            <img src={apexLogo} alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
             <span className="font-extrabold text-base tracking-tight text-[#111827]">APEX 4</span>
           </div>
 
@@ -415,7 +416,7 @@ export const LandingPage: React.FC = () => {
         <div className="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-6 text-center md:text-left">
           <div className="space-y-2">
             <div className="flex items-center justify-center md:justify-start gap-3">
-              <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
+              <img src={apexLogo} alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
               <span className="font-extrabold text-base text-[#111827] tracking-tight">APEX 4</span>
             </div>
             <p className="text-xs font-semibold text-[#2563EB]">

@@ -20,6 +20,7 @@ import {
   Eye,
   Cpu,
 } from 'lucide-react';
+import apexLogo from '../assets/logo';
 import {
   ResponsiveContainer,
   LineChart,
@@ -283,7 +284,7 @@ export const TherapistDashboardPage: React.FC<TherapistDashboardPageProps> = ({ 
           ================================================== */}
       <div className="bg-white p-5 sm:p-6 rounded-2xl border border-[#E5E7EB] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-9 h-9 object-contain" />
+          <img src={apexLogo} alt="APEX 4 Logo" className="w-9 h-9 object-contain" />
           <div>
             <div className="flex flex-wrap items-center gap-2">
               <span className="font-extrabold text-base tracking-tight text-[#111827]">APEX 4</span>

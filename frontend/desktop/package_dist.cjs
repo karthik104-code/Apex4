@@ -88,6 +88,17 @@ function assembleDesktopApp() {
   fs.mkdirSync(backendTargetDir, { recursive: true });
   copyRecursiveSync(backendDist, backendTargetDir);
 
+  console.log('[PACKAGE] 6. Creating Windows Desktop Shortcut...');
+  try {
+    const userProfile = process.env.USERPROFILE || 'C:\\Users\\Lakshmigauri';
+    const desktopShortcutPath = path.join(userProfile, 'Desktop', 'APEX 4.lnk');
+    const psScript = `$WshShell = New-Object -ComObject WScript.Shell; $Shortcut = $WshShell.CreateShortcut('${desktopShortcutPath}'); $Shortcut.TargetPath = '${newExe}'; $Shortcut.WorkingDirectory = '${outDir}'; $Shortcut.Description = 'APEX 4 Rehabilitation Assessment Platform'; $Shortcut.Save()`;
+    execSync(`powershell -Command "${psScript}"`, { stdio: 'ignore' });
+    console.log(`[PACKAGE] Created Desktop shortcut at: ${desktopShortcutPath}`);
+  } catch (err) {
+    console.warn('[PACKAGE] Could not create Desktop shortcut automatically:', err.message);
+  }
+
   console.log('\n===============================================================');
   console.log(' APEX 4 WINDOWS STANDALONE SOFTWARE ASSEMBLED SUCCESSFULLY! ');
   console.log('===============================================================');
@@ -95,6 +106,8 @@ function assembleDesktopApp() {
   console.log(`  ${newExe}`);
   console.log('Directory:');
   console.log(`  ${outDir}`);
+  console.log('Desktop Shortcut:');
+  console.log(`  C:\\Users\\Lakshmigauri\\Desktop\\APEX 4.lnk`);
   console.log('===============================================================\n');
 }
 

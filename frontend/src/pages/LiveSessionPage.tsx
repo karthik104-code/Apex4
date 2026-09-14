@@ -26,6 +26,7 @@ import { hardwareBridgeClient } from '../services/hardwareBridge';
 import { sessionRecorder } from '../services/sessionRecorder';
 import { computeSensorFusionScore, ExtendedFusionScore } from '../services/fusionEngine';
 import { useVoicePostureCoach } from '../hooks/useVoicePostureCoach';
+import apexLogo from '../assets/logo';
 
 export type SessionWorkflowStage = 'READY' | 'CALIBRATING' | 'ACTIVE' | 'PAUSED' | 'SUMMARY';
 
@@ -241,7 +242,7 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
         {/* Left: Branding & Workflow Step Progress */}
         <div className="space-y-2">
           <div className="flex items-center gap-3">
-            <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
+            <img src={apexLogo} alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
             <div>
               <div className="flex flex-wrap items-center gap-2">
                 <h1 className="text-xl font-bold text-[#111827] tracking-tight">

@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import apexLogo from '../../assets/logo';
 
 interface ApexSplashLoaderProps {
   onComplete?: () => void;
@@ -55,7 +56,7 @@ export const ApexSplashLoader: React.FC<ApexSplashLoaderProps> = ({
 
           {/* Logo Image */}
           <img
-            src="/apex4-logo.png"
+            src={apexLogo}
             alt="APEX 4 Logo"
             className={`w-14 h-14 object-contain relative z-10 transition-all duration-700 ease-out transform ${
               stage === 'enter' ? 'scale-75 opacity-0 rotate-[-12deg]' : 'scale-100 opacity-100 rotate-0'
