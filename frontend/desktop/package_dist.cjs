@@ -48,8 +48,15 @@ function assembleDesktopApp() {
   }
 
   console.log('[PACKAGE] 2. Preparing output directory:', outDir);
-  if (fs.existsSync(outDir)) {
-    fs.rmSync(outDir, { recursive: true, force: true });
+  try {
+    if (process.platform === 'win32') {
+      try { execSync('taskkill /F /IM "APEX 4.exe" /T', { stdio: 'ignore' }); } catch (_) {}
+    }
+    if (fs.existsSync(outDir)) {
+      fs.rmSync(outDir, { recursive: true, force: true, maxRetries: 3, retryDelay: 500 });
+    }
+  } catch (rmErr) {
+    console.warn('[PACKAGE] Output dir clean warning, continuing in-place copy:', rmErr.message);
   }
   fs.mkdirSync(outDir, { recursive: true });
 

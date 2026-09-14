@@ -128,6 +128,7 @@ function killBackend() {
   }
 }
 
+function createWindow() {
   const iconPath = path.join(__dirname, '..', 'public', 'apex4-logo.png');
 
   mainWindow = new BrowserWindow({
