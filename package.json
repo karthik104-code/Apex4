@@ -1,0 +1,11 @@
+{
+  "name": "apex4-platform",
+  "private": true,
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "npm --prefix frontend run dev",
+    "build": "npm --prefix frontend run build",
+    "desktop:dev": "npm --prefix frontend run desktop:dev",
+    "desktop:build": "npm --prefix frontend run desktop:build"
+  }
+}

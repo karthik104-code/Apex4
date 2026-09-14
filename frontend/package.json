@@ -11,7 +11,7 @@
     "preview": "vite preview",
     "desktop:dev": "concurrently \"vite --port 5173\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
     "desktop:prebuild": "node desktop/build.cjs",
-    "desktop:build": "npm run build && npm run desktop:prebuild && electron-builder --win --dir",
+    "desktop:build": "npm run build && node desktop/package_dist.cjs",
     "desktop:dist": "npm run build && npm run desktop:prebuild && electron-builder --win"
   },
   "dependencies": {
