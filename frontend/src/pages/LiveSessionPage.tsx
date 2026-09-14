@@ -380,6 +380,42 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
       </div>
 
       {/* ==================================================
+          STAGE-AWARE GUIDANCE & NEXT-ACTION BANNER
+          ================================================== */}
+      <div className="p-3.5 rounded-xl bg-white border border-[#E5E7EB] shadow-xs flex flex-wrap items-center justify-between gap-3 text-xs">
+        <div className="flex items-center gap-2.5">
+          <div className={`w-2.5 h-2.5 rounded-full ${
+            stage === 'ACTIVE'
+              ? 'bg-red-500 animate-pulse'
+              : stage === 'CALIBRATING'
+              ? 'bg-amber-500 animate-spin'
+              : stage === 'SUMMARY'
+              ? 'bg-emerald-500'
+              : 'bg-blue-500'
+          }`} />
+          <span className="font-bold text-[#111827]">
+            {stage === 'READY' && 'Stage 1: Ready to Begin Session'}
+            {stage === 'CALIBRATING' && `Stage 1: Neutral Posture Calibration (${calibrationCountdown}s)...`}
+            {stage === 'ACTIVE' && 'Stage 2: Live Rehabilitation Session Active & Recording'}
+            {stage === 'PAUSED' && 'Stage 2: Rehabilitation Session Paused'}
+            {stage === 'SUMMARY' && 'Stage 3: Session Complete — Reviewing Clinical Assessment'}
+          </span>
+          <span className="text-slate-300">|</span>
+          <span className="text-slate-600">
+            {stage === 'READY' && 'Click "Calibrate Baseline" to set neutral posture, or click "Start Session" to begin.'}
+            {stage === 'CALIBRATING' && 'Maintain an upright neutral seated posture facing the camera.'}
+            {stage === 'ACTIVE' && 'Perform exercises on MSV1 actuator. Real-time voice coaching is active.'}
+            {stage === 'PAUSED' && 'Click "Resume Session" to continue exercise or "End Session" to finalize.'}
+            {stage === 'SUMMARY' && 'Review movement quality metrics, hardware dynamics, and AI report below.'}
+          </span>
+        </div>
+
+        <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-700 border border-slate-200 uppercase">
+          {telemetry.hardwareConnected || telemetry.source === 'hardware' ? '● Real Hardware' : '◌ Demo Mode'}
+        </span>
+      </div>
+
+      {/* ==================================================
           STAGE 1 & 2: LIVE SESSION MONITORING VIEW
           ================================================== */}
       {stage !== 'SUMMARY' && (
