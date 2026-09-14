@@ -99,11 +99,11 @@ export const LandingPage: React.FC = () => {
             <Button
               variant="primary"
               size="lg"
-              onClick={() => navigate('/session')}
+              onClick={() => navigate('/calibration')}
               className="flex items-center gap-2 bg-[#2563EB] hover:bg-[#1D4ED8] text-white font-bold px-7 py-3.5 rounded-lg shadow-sm text-sm"
             >
               <PlayCircle className="w-5 h-5 fill-current" />
-              <span>Start a session</span>
+              <span>Start Live Demo</span>
             </Button>
 
             <Button

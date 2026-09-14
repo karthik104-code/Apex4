@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { Play, Pause, Square, Clock, Activity, Cpu, Sparkles, RefreshCw, CheckCircle2, ShieldCheck } from 'lucide-react';
 import { PoseCameraView } from '../components/PoseCameraView';
 import { TelemetryPanel } from '../components/TelemetryPanel';
+import { TelemetrySourceBadge } from '../components/TelemetrySourceBadge';
 import { FusionInsightPanel } from '../components/FusionInsightPanel';
 import { Button } from '../components/ui/Button';
 import { Toast } from '../components/ui/Toast';
@@ -15,6 +16,8 @@ import {
 } from '../types/rehab';
 import { calculateCompensation, calibrateBaseline } from '../pose/compensation';
 import { msv1Hardware } from '../services/hardwareSimulator';
+import { hardwareBridgeClient } from '../services/hardwareBridge';
+import { sessionRecorder } from '../services/sessionRecorder';
 import { computeSensorFusionScore, ExtendedFusionScore } from '../services/fusionEngine';
 
 interface LiveSessionPageProps {
@@ -49,14 +52,34 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Timer effect
+  // Subscribe to Real-Time Hardware Bridge WebSocket Telemetry
+  useEffect(() => {
+    const unsubscribe = hardwareBridgeClient.subscribeTelemetry((liveData) => {
+      if (liveData.source === 'hardware' || liveData.hardwareConnected) {
+        setTelemetry(liveData);
+        setFusionScore(computeSensorFusionScore(compensation, liveData));
+      }
+    });
+
+    return () => unsubscribe();
+  }, [compensation]);
+
+  // Timer effect & 1Hz structured session snapshot recording
   useEffect(() => {
     if (isSessionActive) {
       timerRef.current = setInterval(() => {
         setSessionSeconds((prev) => prev + 1);
-        const latestTel = msv1Hardware.getSimulatedTelemetry();
-        setTelemetry(latestTel);
-        setFusionScore(computeSensorFusionScore(compensation, latestTel));
+
+        // Fetch latest telemetry if in simulation mode
+        let currentTel = telemetry;
+        if (!telemetry.hardwareConnected && telemetry.mode === 'simulated') {
+          currentTel = msv1Hardware.getSimulatedTelemetry();
+          setTelemetry(currentTel);
+          setFusionScore(computeSensorFusionScore(compensation, currentTel));
+        }
+
+        // Record structured 1Hz snapshot
+        sessionRecorder.recordSnapshot(currentTel, compensation, fusionScore);
       }, 1000);
     } else if (timerRef.current) {
       clearInterval(timerRef.current);
@@ -65,7 +88,7 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
     return () => {
       if (timerRef.current) clearInterval(timerRef.current);
     };
-  }, [isSessionActive, compensation]);
+  }, [isSessionActive, compensation, telemetry, fusionScore]);
 
   // Handle live pose landmarks from Camera View
   const handlePoseDetected = (landmarks: PoseLandmark[]) => {
@@ -88,32 +111,48 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
   };
 
   const handleStartSession = () => {
+    const activeState = sessionRecorder.getRecordingState();
+    const source = (telemetry.hardwareConnected || telemetry.source === 'hardware') ? 'hardware' : 'demo';
+
+    if (activeState === 'paused') {
+      sessionRecorder.resumeSession();
+      setToastMessage('Session Resumed');
+    } else {
+      const sid = sessionRecorder.startSession(source);
+      setToastMessage(`Live Rehabilitation Session Started (${source.toUpperCase()} mode, ID: ${sid.slice(0, 12)})`);
+    }
     setIsSessionActive(true);
-    setToastMessage('Live Rehabilitation Session Started');
   };
 
   const handlePauseSession = () => {
+    sessionRecorder.pauseSession();
     setIsSessionActive(false);
     setToastMessage('Session Paused');
   };
 
   const handleEndSession = () => {
     setIsSessionActive(false);
+    const recordedData = sessionRecorder.endSession();
 
     const completedSession: RehabSession = {
-      id: `ses-${Date.now()}`,
+      id: recordedData.sessionId,
+      sessionId: recordedData.sessionId,
+      startedAt: recordedData.startedAt,
+      endedAt: recordedData.endedAt,
+      source: recordedData.source,
       patientId: 'patient-01',
       patientName: 'Alex Mercer',
-      date: new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-      durationSeconds: sessionSeconds || 180,
-      fusionScore,
-      compensationMetrics: compensation,
-      telemetry,
-      status: 'completed',
+      date: new Date(recordedData.startedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+      durationSeconds: recordedData.durationSeconds || sessionSeconds,
+      fusionScore: recordedData.analytics,
+      compensationMetrics: recordedData.vision,
+      telemetry: recordedData.telemetry,
+      recordedSessionData: recordedData,
+      status: recordedData.status === 'completed' ? 'completed' : 'invalid',
     };
 
     onSessionCompleted(completedSession);
-    setToastMessage('Session completed. Navigating to therapist summary...');
+    setToastMessage(`Session completed (${recordedData.sampleCount || 0} measurements recorded). Navigating...`);
     setTimeout(() => {
       navigate('/dashboard');
     }, 1000);
@@ -151,13 +190,14 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
         <div className="flex items-center gap-3">
           <img src="/apex4-logo.png" alt="APEX 4 Logo" className="w-8 h-8 object-contain" />
           <div>
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-wrap items-center gap-2.5">
               <h1 className="text-xl font-bold text-[#111827] tracking-tight">Live Rehabilitation</h1>
               {/* Tracking Indicator Pill */}
               <span className="px-2.5 py-0.5 rounded-full bg-[#EAF8F1] text-[#22A06B] text-[11px] font-bold flex items-center gap-1.5 border border-emerald-200">
                 <span className="w-2 h-2 rounded-full bg-[#22A06B] animate-pulse" />
-                Tracking
+                Vision Active
               </span>
+              <TelemetrySourceBadge />
             </div>
             <p className="text-xs text-slate-500 font-medium mt-0.5">
               Movement analysis & APEX 4 telemetry
@@ -232,6 +272,8 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
             onPoseDetected={handlePoseDetected}
             isCalibrating={isCalibrating}
             calibrationCompleted={calibration.isCalibrated}
+            compensationMetrics={compensation}
+            onCalibrate={handleCalibrate}
           />
 
           {/* Simple Calibration Banner */}
