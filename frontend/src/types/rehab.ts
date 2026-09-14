@@ -49,12 +49,66 @@ export interface FusionScore {
   compensationSummary: string;
 }
 
+export interface PosturalParameterItem {
+  parameter: string;
+  observedValue: string;
+  referenceThreshold: string;
+  interpretation: string;
+}
+
+export interface CompensationReportItem {
+  pattern: string;
+  magnitude: string;
+  frequency: string;
+  phase: string;
+  details: string;
+}
+
+export interface MotorPerformanceReportItem {
+  metric: string;
+  value: string;
+  unit: string;
+  interpretation: string;
+}
+
+export interface BilateralPerformanceItem {
+  leftValue?: string;
+  rightValue?: string;
+  difference?: string;
+  interpretation: string;
+}
+
+export interface MovementQualityReportSection {
+  score: number;
+  label: string;
+  explanation: string;
+}
+
 export interface AIReport {
-  positiveObservations: string[];
-  measurableConcerns: string[];
-  sessionTrend: string;
-  therapistDiscussionPoints: string[];
-  disclaimer: string;
+  sessionId?: string;
+  sessionDate?: string;
+  sessionDuration?: string;
+  dataSource?: string;
+  poseAnalysisSource?: string;
+  sessionOverview: string;
+  posturalAssessment?: PosturalParameterItem[];
+  movementCompensation?: CompensationReportItem[];
+  motorPerformance?: MotorPerformanceReportItem[];
+  bilateralPerformance?: BilateralPerformanceItem;
+  movementQuality?: MovementQualityReportSection;
+  temporalAnalysis?: string[];
+  aiObservations?: string[];
+  professionalReviewPoints?: string[];
+  limitations?: string;
+  safetyNotice?: string;
+  language?: string;
+
+  // Backward compatibility fields
+  positiveObservations?: string[];
+  measurableConcerns?: string[];
+  sessionTrend?: string;
+  therapistDiscussionPoints?: string[];
+  disclaimer?: string;
 }
 
 export interface RehabSession {
