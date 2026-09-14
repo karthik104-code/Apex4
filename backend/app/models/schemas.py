@@ -112,31 +112,21 @@ class HardwareStatusResponse(BaseModel):
     arduinoConnected: bool = False
     port: Optional[str] = None
     mode: str = "demo"
-    hidStatus: str = "DISCONNECTED"
-    arduinoStatus: str = "DISCONNECTED"
-    vendorId: str = "0x68E"
-    productId: str = "0xF2"
 
 
 class HardwareTelemetryPayload(BaseModel):
     connected: bool = False
     pedalsConnected: bool = False
     arduinoConnected: bool = False
-    rawLeftForce: int = 0
-    rawRightForce: int = 0
-    rawRudder: int = 128
     leftForce: int = 0
     rightForce: int = 0
-    rudder: int = 128
+    rudder: int = 0
     force: float = 0.0
     reactionTime: float = 0.0
     accuracy: float = 0.0
     strikeConsistency: float = 0.0
     timestamp: str
     source: str = "simulated"
-    port: Optional[str] = None
-    vendorId: str = "0x68E"
-    productId: str = "0xF2"
 
 
 class RecordedSessionPayload(BaseModel):
@@ -158,10 +148,8 @@ class HardwareConnectRequest(BaseModel):
 
 
 class HardwareCalibrateRequest(BaseModel):
-    calLeftMin: Optional[int] = 0
-    calLeftMax: Optional[int] = 255
-    calRightMin: Optional[int] = 0
-    calRightMax: Optional[int] = 255
+    zeroLeft: Optional[int] = 0
+    zeroRight: Optional[int] = 0
 
 
 # Authentication & User Schemas

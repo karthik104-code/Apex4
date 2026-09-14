@@ -6,51 +6,10 @@ export interface HardwareBridgeStatus {
   arduinoConnected: boolean;
   port: string | null;
   mode: 'real' | 'demo';
-  hidStatus: 'CONNECTED' | 'DISCONNECTED' | 'RECONNECTING';
-  arduinoStatus: 'CONNECTED' | 'DISCONNECTED' | 'RECONNECTING';
-  vendorId?: string;
-  productId?: string;
-}
-
-export interface HardwareCalibrationData {
-  calLeftMin: number;
-  calLeftMax: number;
-  calRightMin: number;
-  calRightMax: number;
-}
-
-export interface HardwareDiagnosticsData {
-  vendorId: string;
-  productId: string;
-  hidConnected: boolean;
-  hidDevicesCount: number;
-  arduinoConnected: boolean;
-  selectedPort: string | null;
-  availablePorts: string[];
-  rawLeftForce: number;
-  rawRightForce: number;
-  rawRudder: number;
-  packetsSent: number;
-  lastPacketTimestamp: string | null;
 }
 
 export type TelemetryListener = (telemetry: HardwareTelemetry) => void;
 export type StatusListener = (status: HardwareBridgeStatus) => void;
-
-function getApiBaseUrl(): string {
-  if (typeof window !== 'undefined' && window.location.protocol.startsWith('http')) {
-    return `${window.location.origin}/api/hardware`;
-  }
-  return 'http://127.0.0.1:8000/api/hardware';
-}
-
-function getWsUrl(): string {
-  if (typeof window !== 'undefined' && window.location.protocol.startsWith('http')) {
-    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-    return `${protocol}//${window.location.host}/api/hardware/ws`;
-  }
-  return 'ws://127.0.0.1:8000/api/hardware/ws';
-}
 
 class APEX4HardwareBridgeClient {
   private ws: WebSocket | null = null;
@@ -64,22 +23,13 @@ class APEX4HardwareBridgeClient {
     arduinoConnected: false,
     port: null,
     mode: 'demo',
-    hidStatus: 'DISCONNECTED',
-    arduinoStatus: 'DISCONNECTED',
-    vendorId: '0x68E',
-    productId: '0xF2',
   };
 
   private latestTelemetry: HardwareTelemetry | null = null;
 
   constructor() {
+    // Auto-connect WebSocket on initialization
     this.connectWebSocket();
-    // Periodic status sync
-    if (typeof window !== 'undefined') {
-      window.setInterval(() => {
-        this.fetchStatus();
-      }, 3000);
-    }
   }
 
   public getStatus(): HardwareBridgeStatus {
@@ -108,41 +58,49 @@ class APEX4HardwareBridgeClient {
     };
   }
 
+  private get backendUrl() {
+    return `${window.location.protocol}//${window.location.hostname}:8000`;
+  }
+
+  private get wsBackendUrl() {
+    const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+    return `${protocol}//${window.location.hostname}:8000`;
+  }
+
   public async fetchStatus(): Promise<HardwareBridgeStatus> {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/status`);
+      const res = await fetch(`${this.backendUrl}/api/v1/hardware/status`);
       if (res.ok) {
         const data = await res.json();
+        data.connected = !!data.pedalsConnected;
+        data.mode = data.connected ? 'real' : 'demo';
         this.updateStatus(data);
         return this.status;
       }
     } catch {
-      // Backend offline -> demo status
+      // Endpoint offline -> demo status
     }
+    this.updateStatus({
+      connected: false,
+      pedalsConnected: false,
+      arduinoConnected: false,
+      port: null,
+      mode: 'demo',
+    });
     return this.status;
-  }
-
-  public async listPorts(): Promise<string[]> {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/ports`);
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch (err) {
-      console.warn('Failed to list COM ports:', err);
-    }
-    return ['COM5', 'COM4'];
   }
 
   public async connectHardware(port?: string, baudRate = 9600): Promise<HardwareBridgeStatus> {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/connect`, {
+      const res = await fetch(`${this.backendUrl}/api/v1/hardware/connect`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ port, baudRate }),
       });
       if (res.ok) {
         const data = await res.json();
+        data.connected = !!data.pedalsConnected;
+        data.mode = data.connected ? 'real' : 'demo';
         this.updateStatus(data);
         return this.status;
       }
@@ -154,9 +112,11 @@ class APEX4HardwareBridgeClient {
 
   public async disconnectHardware(): Promise<HardwareBridgeStatus> {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/disconnect`, { method: 'POST' });
+      const res = await fetch(`${this.backendUrl}/api/v1/hardware/disconnect`, { method: 'POST' });
       if (res.ok) {
         const data = await res.json();
+        data.connected = !!data.pedalsConnected;
+        data.mode = data.connected ? 'real' : 'demo';
         this.updateStatus(data);
         return this.status;
       }
@@ -166,24 +126,12 @@ class APEX4HardwareBridgeClient {
     return this.status;
   }
 
-  public async getCalibration(): Promise<HardwareCalibrationData | null> {
+  public async calibrate(zeroLeft = 0, zeroRight = 0): Promise<boolean> {
     try {
-      const res = await fetch(`${getApiBaseUrl()}/calibration`);
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch {
-      return null;
-    }
-    return null;
-  }
-
-  public async setCalibration(cal: HardwareCalibrationData): Promise<boolean> {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/calibrate`, {
+      const res = await fetch(`${this.backendUrl}/api/v1/hardware/calibrate`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(cal),
+        body: JSON.stringify({ zeroLeft, zeroRight }),
       });
       return res.ok;
     } catch {
@@ -191,40 +139,18 @@ class APEX4HardwareBridgeClient {
     }
   }
 
-  public async calibrate(zeroLeft = 0, zeroRight = 0): Promise<boolean> {
-    return this.setCalibration({
-      calLeftMin: zeroLeft,
-      calLeftMax: 255,
-      calRightMin: zeroRight,
-      calRightMax: 255,
-    });
-  }
-
-  public async getDiagnostics(): Promise<HardwareDiagnosticsData | null> {
-    try {
-      const res = await fetch(`${getApiBaseUrl()}/diagnostics`);
-      if (res.ok) {
-        return await res.json();
-      }
-    } catch {
-      return null;
-    }
-    return null;
-  }
-
   private connectWebSocket() {
     if (this.ws) {
-      try { this.ws.close(); } catch (_) {}
-      this.ws = null;
+      this.ws.close();
     }
 
-    const wsUrl = getWsUrl();
+    const wsUrl = `${this.wsBackendUrl}/api/v1/hardware/ws`;
 
     try {
       const socket = new WebSocket(wsUrl);
 
       socket.onopen = () => {
-        console.log('[APEX4] Hardware Bridge WebSocket connected:', wsUrl);
+        console.log('APEX 4 Hardware Bridge WebSocket connected.');
         if (this.reconnectTimer) {
           window.clearTimeout(this.reconnectTimer);
           this.reconnectTimer = null;
@@ -242,41 +168,29 @@ class APEX4HardwareBridgeClient {
             strikeConsistency: raw.strikeConsistency ?? 82,
             consistency: raw.strikeConsistency ?? 82,
             timestamp: raw.timestamp || new Date().toISOString(),
-            mode: raw.source === 'hardware' ? 'hardware' : 'simulated',
-            connectionStatus: raw.connected ? 'connected' : 'simulated',
-            rawLeftForce: raw.rawLeftForce ?? 0,
-            rawRightForce: raw.rawRightForce ?? 0,
-            rawRudder: raw.rawRudder ?? 128,
+            mode: raw.pedalsConnected ? 'hardware' : 'simulated',
+            connectionStatus: raw.pedalsConnected ? 'connected' : 'simulated',
             leftForce: raw.leftForce ?? 0,
             rightForce: raw.rightForce ?? 0,
-            rudder: raw.rudder ?? 128,
-            hardwareConnected: raw.connected ?? false,
+            rudder: raw.rudder ?? 0,
+            hardwareConnected: !!raw.pedalsConnected,
             pedalsConnected: raw.pedalsConnected ?? false,
             arduinoConnected: raw.arduinoConnected ?? false,
-            hidStatus: raw.pedalsConnected ? 'CONNECTED' : 'DISCONNECTED',
-            arduinoStatus: raw.arduinoConnected ? 'CONNECTED' : 'DISCONNECTED',
-            port: raw.port ?? null,
-            vendorId: raw.vendorId ?? '0x68E',
-            productId: raw.productId ?? '0xF2',
-            source: raw.source ?? 'simulated',
+            source: raw.pedalsConnected ? 'hardware' : 'simulated',
           };
 
           this.latestTelemetry = telemetry;
           this.telemetryListeners.forEach((fn) => fn(telemetry));
 
           this.updateStatus({
-            connected: raw.connected ?? false,
+            connected: !!raw.pedalsConnected,
             pedalsConnected: raw.pedalsConnected ?? false,
             arduinoConnected: raw.arduinoConnected ?? false,
             port: raw.port ?? null,
-            mode: raw.source === 'hardware' ? 'real' : 'demo',
-            hidStatus: raw.pedalsConnected ? 'CONNECTED' : 'DISCONNECTED',
-            arduinoStatus: raw.arduinoConnected ? 'CONNECTED' : 'DISCONNECTED',
-            vendorId: raw.vendorId ?? '0x68E',
-            productId: raw.productId ?? '0xF2',
+            mode: raw.pedalsConnected ? 'real' : 'demo',
           });
         } catch (err) {
-          console.error('Error parsing hardware WebSocket packet:', err);
+          console.error('Error parsing hardware WebSocket frame:', err);
         }
       };
 
@@ -285,7 +199,7 @@ class APEX4HardwareBridgeClient {
       };
 
       socket.onerror = () => {
-        try { socket.close(); } catch (_) {}
+        socket.close();
       };
 
       this.ws = socket;
@@ -299,25 +213,18 @@ class APEX4HardwareBridgeClient {
       this.reconnectTimer = window.setTimeout(() => {
         this.reconnectTimer = null;
         this.connectWebSocket();
-      }, 3000);
+      }, 5000);
     }
   }
 
-  private updateStatus(newStatus: Partial<HardwareBridgeStatus>) {
-    const updated: HardwareBridgeStatus = {
-      ...this.status,
-      ...newStatus,
-      mode: (newStatus.pedalsConnected || newStatus.arduinoConnected) ? 'real' : (newStatus.mode || this.status.mode),
-    };
-
+  private updateStatus(newStatus: HardwareBridgeStatus) {
     const changed =
-      this.status.connected !== updated.connected ||
-      this.status.pedalsConnected !== updated.pedalsConnected ||
-      this.status.arduinoConnected !== updated.arduinoConnected ||
-      this.status.mode !== updated.mode ||
-      this.status.port !== updated.port;
+      this.status.connected !== newStatus.connected ||
+      this.status.pedalsConnected !== newStatus.pedalsConnected ||
+      this.status.arduinoConnected !== newStatus.arduinoConnected ||
+      this.status.mode !== newStatus.mode;
 
-    this.status = updated;
+    this.status = newStatus;
     if (changed) {
       this.statusListeners.forEach((fn) => fn({ ...this.status }));
     }

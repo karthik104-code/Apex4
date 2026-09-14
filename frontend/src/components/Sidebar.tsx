@@ -20,6 +20,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
     { path: '/calibration', label: 'Postural Calibration', icon: RefreshCw },
     { path: '/dashboard', label: 'Therapist Dashboard', icon: LayoutDashboard },
     { path: '/history', label: 'Session Archive', icon: History },
+    { path: '/hardware', label: 'Hardware HUD', icon: Activity },
     { path: '/settings', label: 'Settings', icon: SettingsIcon },
   ];
 

@@ -1,7 +1,6 @@
 import React from 'react';
 import { Cpu, Sliders } from 'lucide-react';
 import { HardwareTelemetry } from '../types/rehab';
-import { HudForceGauge } from './HudForceGauge';
 
 interface TelemetryPanelProps {
   telemetry: HardwareTelemetry;
@@ -42,7 +41,7 @@ export const TelemetryPanel: React.FC<TelemetryPanelProps> = ({
   };
 
   return (
-    <div className="bg-white p-5 rounded-2xl border border-[#E5E7EB] shadow-xs space-y-4">
+    <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-xs space-y-5">
       {/* Header */}
       <div className="flex flex-wrap items-center justify-between gap-2 border-b border-slate-100 pb-3">
         <div className="flex items-center gap-2">
@@ -62,9 +61,6 @@ export const TelemetryPanel: React.FC<TelemetryPanelProps> = ({
           )}
         </div>
       </div>
-
-      {/* 20-Segment Mantis Shrimp Radial Gauge */}
-      <HudForceGauge telemetry={telemetry} showRaw={true} />
 
       {/* Main Actuator Metrics Grid */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">

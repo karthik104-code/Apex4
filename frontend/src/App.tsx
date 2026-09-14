@@ -17,6 +17,7 @@ const TherapistDashboardPage = lazy(() => import('./pages/TherapistDashboardPage
 const SessionHistoryPage = lazy(() => import('./pages/SessionHistoryPage').then(m => ({ default: m.SessionHistoryPage })));
 const SettingsPage = lazy(() => import('./pages/SettingsPage').then(m => ({ default: m.SettingsPage })));
 const LoginPage = lazy(() => import('./pages/LoginPage').then(m => ({ default: m.LoginPage })));
+const HardwareHUDPage = lazy(() => import('./pages/HardwareHUDPage').then(m => ({ default: m.HardwareHUDPage })));
 
 const ProtectedLayout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -171,6 +172,14 @@ export const App: React.FC = () => {
                 element={
                   <ProtectedLayout>
                     <SettingsPage />
+                  </ProtectedLayout>
+                }
+              />
+              <Route
+                path="/hardware"
+                element={
+                  <ProtectedLayout>
+                    <HardwareHUDPage />
                   </ProtectedLayout>
                 }
               />
