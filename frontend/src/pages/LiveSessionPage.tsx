@@ -5,6 +5,7 @@ import { PoseCameraView } from '../components/PoseCameraView';
 import { TelemetryPanel } from '../components/TelemetryPanel';
 import { TelemetrySourceBadge } from '../components/TelemetrySourceBadge';
 import { FusionInsightPanel } from '../components/FusionInsightPanel';
+import { VoiceCoachIndicator } from '../components/VoiceCoachIndicator';
 import { Button } from '../components/ui/Button';
 import { Toast } from '../components/ui/Toast';
 import {
@@ -19,6 +20,7 @@ import { msv1Hardware } from '../services/hardwareSimulator';
 import { hardwareBridgeClient } from '../services/hardwareBridge';
 import { sessionRecorder } from '../services/sessionRecorder';
 import { computeSensorFusionScore, ExtendedFusionScore } from '../services/fusionEngine';
+import { useVoicePostureCoach } from '../hooks/useVoicePostureCoach';
 
 interface LiveSessionPageProps {
   calibration: BaselineCalibration;
@@ -49,6 +51,20 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
   const [fusionScore, setFusionScore] = useState<ExtendedFusionScore>(
     computeSensorFusionScore(compensation, telemetry)
   );
+
+  // Voice Posture Commander Hook
+  const {
+    isVoiceCoachEnabled,
+    isSpeaking,
+    activeCorrection,
+    toggleVoiceCoach,
+    processPostureFrame,
+  } = useVoicePostureCoach({
+    enabled: true,
+    isSessionActive,
+    poseConfidence: currentLandmarks.length > 0 ? 0.95 : 0.0,
+    isPoseDetected: currentLandmarks.length > 0,
+  });
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
 
@@ -97,6 +113,9 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
     setCompensation(comp);
     const fused = computeSensorFusionScore(comp, telemetry);
     setFusionScore(fused);
+
+    // Evaluate posture for voice coaching
+    processPostureFrame(comp, landmarks.length > 0 ? 0.95 : 0.0, landmarks.length > 0);
   };
 
   // 1-Click Neutral Posture Calibration
@@ -295,7 +314,15 @@ export const LiveSessionPage: React.FC<LiveSessionPageProps> = ({
         </div>
 
         {/* RIGHT COLUMN (5 cols): Movement Analysis & APEX 4 Performance */}
-        <div className="lg:col-span-5 space-y-6">
+        <div className="lg:col-span-5 space-y-4">
+          {/* Live Voice Posture Coach Indicator */}
+          <VoiceCoachIndicator
+            isEnabled={isVoiceCoachEnabled}
+            isSpeaking={isSpeaking}
+            activeCorrection={activeCorrection}
+            onToggle={toggleVoiceCoach}
+          />
+
           {/* Movement Analysis Section */}
           <div className="bg-white p-6 rounded-2xl border border-[#E5E7EB] shadow-xs space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 pb-3">

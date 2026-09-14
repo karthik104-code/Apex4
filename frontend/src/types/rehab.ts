@@ -9,7 +9,9 @@ export type CompensationLevel = 'low' | 'medium' | 'high';
 
 export interface CompensationMetrics {
   trunkLeanAngle: number; // Degrees deviation from vertical
+  trunkLeanDirection?: 'left' | 'right' | 'neutral';
   trunkLeanLevel: CompensationLevel;
+  anteriorInclinationRatio?: number;
   shoulderHikeDisplacement: number; // Normalized height asymmetry
   shoulderHikeLevel: CompensationLevel;
   torsoRotationAngle: number; // Angle mismatch between shoulders and hips

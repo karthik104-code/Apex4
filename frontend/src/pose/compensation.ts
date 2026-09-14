@@ -4,12 +4,14 @@ export interface SegmentCompensation {
   value: number;
   level: CompensationLevel;
   label: string;
+  direction?: 'left' | 'right' | 'neutral';
 }
 
 export interface CompensationEngineOutput {
   trunk: SegmentCompensation;
   shoulder: SegmentCompensation;
   rotation: SegmentCompensation;
+  anteriorInclinationRatio?: number;
   movement_quality: number; // 0..100%
   stability: number; // 0..100%
   feedbackMessage: string;
@@ -79,6 +81,12 @@ export class MovementCompensationEngine {
     const dx = midShoulderX - midHipX;
     const dy = midHipY - midShoulderY;
 
+    // Determine direction: dx > 0 means leaning towards right, dx < 0 means leaning towards left
+    let trunkDirection: 'left' | 'right' | 'neutral' = 'neutral';
+    if (Math.abs(dx) > 0.02) {
+      trunkDirection = dx > 0 ? 'right' : 'left';
+    }
+
     let rawTrunkAngle = (Math.atan2(Math.abs(dx), Math.abs(dy)) * 180) / Math.PI;
 
     if (baseline && baseline.isCalibrated) {
@@ -89,6 +97,11 @@ export class MovementCompensationEngine {
 
     const trunkValue = Math.min(Math.round(rawTrunkAngle * 10) / 10, 45);
     const trunkLevel = classifyLevel(trunkValue, this.thresholds.trunkLean);
+
+    // Anterior inclination: approximate from vertical trunk compression or depth
+    const baselineDist = baseline?.isCalibrated ? Math.abs(baseline.midShoulderY - midHipY) : 0.45;
+    const currentDist = Math.abs(midShoulderY - midHipY);
+    const anteriorRatio = Math.max(0, Math.min(1.0, Math.round(Math.max(0, baselineDist - currentDist) / (baselineDist || 0.45) * 100) / 100));
 
     // 2. Shoulder Hike Calculation: Height asymmetry ratio normalized by shoulder width
     const shoulderWidth = Math.hypot(rs.x - ls.x, rs.y - ls.y) || 0.2;
@@ -128,9 +141,10 @@ export class MovementCompensationEngine {
     }
 
     return {
-      trunk: { value: trunkValue, level: trunkLevel, label: 'Trunk Lean' },
+      trunk: { value: trunkValue, level: trunkLevel, label: 'Trunk Lean', direction: trunkDirection },
       shoulder: { value: shoulderValue, level: shoulderLevel, label: 'Shoulder Hike' },
       rotation: { value: rotationValue, level: rotationLevel, label: 'Torso Rotation' },
+      anteriorInclinationRatio: anteriorRatio,
       movement_quality,
       stability,
       feedbackMessage,
@@ -139,9 +153,10 @@ export class MovementCompensationEngine {
 
   private createDefaultOutput(msg: string): CompensationEngineOutput {
     return {
-      trunk: { value: 0, level: 'low', label: 'Trunk Lean' },
+      trunk: { value: 0, level: 'low', label: 'Trunk Lean', direction: 'neutral' },
       shoulder: { value: 0, level: 'low', label: 'Shoulder Hike' },
       rotation: { value: 0, level: 'low', label: 'Torso Rotation' },
+      anteriorInclinationRatio: 0,
       movement_quality: 95,
       stability: 95,
       feedbackMessage: msg,
@@ -195,7 +210,9 @@ export function calculateCompensation(landmarks: PoseLandmark[], baseline?: Base
   const out = compensationEngine.evaluatePose(landmarks, baseline);
   return {
     trunkLeanAngle: out.trunk.value,
+    trunkLeanDirection: out.trunk.direction || 'neutral',
     trunkLeanLevel: out.trunk.level,
+    anteriorInclinationRatio: out.anteriorInclinationRatio || 0,
     shoulderHikeDisplacement: out.shoulder.value,
     shoulderHikeLevel: out.shoulder.level,
     torsoRotationAngle: out.rotation.value,
