@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Camera, CameraOff, AlertCircle, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Camera, CameraOff, AlertCircle, RefreshCw, CheckCircle2, Maximize2, Minimize2, Activity } from 'lucide-react';
 import { PoseLandmark } from '../types/rehab';
 import { getPoseLandmarker, detectPoseInVideo } from '../pose/landmarker';
 import { PoseLandmarker as MediaPipeLandmarker } from '@mediapipe/tasks-vision';
@@ -8,13 +8,26 @@ interface PoseCameraViewProps {
   onPoseDetected: (landmarks: PoseLandmark[]) => void;
   isCalibrating?: boolean;
   calibrationCompleted?: boolean;
+  compensationMetrics?: {
+    trunkLeanAngle: number;
+    trunkLeanLevel: string;
+    shoulderHikeDisplacement: number;
+    shoulderHikeLevel: string;
+    torsoRotationAngle: number;
+    torsoRotationLevel: string;
+    overallStability: number;
+  };
+  onCalibrate?: () => void;
 }
 
 export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
   onPoseDetected,
   isCalibrating = false,
   calibrationCompleted = false,
+  compensationMetrics,
+  onCalibrate,
 }) => {
+  const containerRef = useRef<HTMLDivElement | null>(null);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
 
@@ -24,6 +37,7 @@ export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isTrackingActive, setIsTrackingActive] = useState(true);
   const [landmarker, setLandmarker] = useState<MediaPipeLandmarker | null>(null);
+  const [isFullscreen, setIsFullscreen] = useState(false);
 
   const animFrameId = useRef<number | null>(null);
   const streamRef = useRef<MediaStream | null>(null);
@@ -39,6 +53,33 @@ export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
     loadModel();
   }, []);
 
+  // Listen for native escape key / fullscreen exit
+  useEffect(() => {
+    const handleFullscreenChange = () => {
+      if (!document.fullscreenElement) {
+        setIsFullscreen(false);
+      }
+    };
+    document.addEventListener('fullscreenchange', handleFullscreenChange);
+    return () => {
+      document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    };
+  }, []);
+
+  const toggleFullscreen = () => {
+    if (!isFullscreen) {
+      if (containerRef.current?.requestFullscreen) {
+        containerRef.current.requestFullscreen().catch(() => {});
+      }
+      setIsFullscreen(true);
+    } else {
+      if (document.fullscreenElement) {
+        document.exitFullscreen().catch(() => {});
+      }
+      setIsFullscreen(false);
+    }
+  };
+
   // Initialize Camera
   const startCamera = async () => {
     try {
@@ -50,7 +91,7 @@ export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
       }
 
       const stream = await navigator.mediaDevices.getUserMedia({
-        video: { width: 640, height: 480, facingMode: 'user' },
+        video: { width: 1280, height: 720, facingMode: 'user' },
       });
 
       streamRef.current = stream;
@@ -109,6 +150,15 @@ export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
       const ctx = canvas.getContext('2d');
       if (!ctx) return;
 
+      // Dynamic Canvas Resizing to avoid distortion in fullscreen
+      const rect = canvas.getBoundingClientRect();
+      if (rect.width > 0 && rect.height > 0) {
+        if (canvas.width !== Math.floor(rect.width) || canvas.height !== Math.floor(rect.height)) {
+          canvas.width = Math.floor(rect.width);
+          canvas.height = Math.floor(rect.height);
+        }
+      }
+
       const width = canvas.width || 640;
       const height = canvas.height || 480;
       ctx.clearRect(0, 0, width, height);
@@ -130,11 +180,11 @@ export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
           currentLandmarks = generateSimulatedLandmarks(leanDx, hikeDy);
         }
       } else {
-        // Clean light background for simulation
-        ctx.fillStyle = '#F8FAFC';
+        // Dark background for fullscreen simulation, clean light for normal mode
+        ctx.fillStyle = isFullscreen ? '#090D16' : '#F8FAFC';
         ctx.fillRect(0, 0, width, height);
 
-        ctx.strokeStyle = '#E5E7EB';
+        ctx.strokeStyle = isFullscreen ? 'rgba(255, 255, 255, 0.08)' : '#E5E7EB';
         ctx.lineWidth = 1;
         for (let x = 0; x < width; x += 40) {
           ctx.beginPath();
@@ -171,15 +221,22 @@ export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
         cancelAnimationFrame(animFrameId.current);
       }
     };
-  }, [cameraState, landmarker, isTrackingActive, isCalibrating, onPoseDetected]);
+  }, [cameraState, landmarker, isTrackingActive, isCalibrating, isFullscreen, onPoseDetected]);
 
   return (
-    <div className="relative w-full aspect-video rounded-2xl overflow-hidden bg-white border border-[#E5E7EB] flex items-center justify-center shadow-xs">
+    <div
+      ref={containerRef}
+      className={`relative w-full rounded-2xl overflow-hidden transition-all duration-300 flex items-center justify-center ${
+        isFullscreen
+          ? 'fixed inset-0 z-[9999] bg-[#090D16] w-screen h-screen rounded-none border-0'
+          : 'aspect-video bg-white border border-[#E5E7EB] shadow-xs'
+      }`}
+    >
       <video ref={videoRef} playsInline muted className="hidden" />
-      <canvas ref={canvasRef} width={640} height={480} className="w-full h-full object-cover" />
+      <canvas ref={canvasRef} className="w-full h-full object-cover" />
 
       {/* Top Left: Tracking Status Badge */}
-      <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/90 backdrop-blur-xs border border-[#E5E7EB] text-xs font-semibold text-[#111827] shadow-xs">
+      <div className="absolute top-4 left-4 flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/95 dark:bg-slate-900/90 backdrop-blur-md border border-[#E5E7EB] dark:border-slate-800 text-xs font-semibold text-[#111827] dark:text-white shadow-md z-10">
         <span
           className={`w-2.5 h-2.5 rounded-full ${
             isTrackingActive
@@ -192,18 +249,30 @@ export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
         <span>
           {isTrackingActive
             ? cameraState === 'active'
-              ? 'Tracking Active'
-              : 'Simulated Tracking'
+              ? 'Live Vision Active'
+              : 'Simulated Posture Tracking'
             : 'Tracking Paused'}
         </span>
       </div>
 
-      {/* Top Right: Camera Toggle */}
-      <div className="absolute top-4 right-4 flex items-center gap-2">
+      {/* Top Right Controls: Camera Toggle & Fullscreen Toggle */}
+      <div className="absolute top-4 right-4 flex items-center gap-2 z-10">
+        {onCalibrate && (
+          <button
+            onClick={onCalibrate}
+            disabled={isCalibrating}
+            className="p-2 rounded-lg bg-white/90 hover:bg-slate-50 dark:bg-slate-900/90 dark:hover:bg-slate-800 border border-[#E5E7EB] dark:border-slate-800 text-[#2563EB] dark:text-blue-400 flex items-center gap-1.5 text-xs shadow-md font-semibold"
+            title="Calibrate Neutral Position"
+          >
+            <RefreshCw className={`w-4 h-4 ${isCalibrating ? 'animate-spin' : ''}`} />
+            <span className="hidden sm:inline">{isCalibrating ? 'Calibrating...' : 'Calibrate'}</span>
+          </button>
+        )}
+
         {cameraState === 'active' ? (
           <button
             onClick={stopCamera}
-            className="p-2 rounded-lg bg-white/90 hover:bg-slate-50 border border-[#E5E7EB] text-[#111827] flex items-center gap-1.5 text-xs shadow-xs font-medium"
+            className="p-2 rounded-lg bg-white/90 hover:bg-slate-50 dark:bg-slate-900/90 dark:hover:bg-slate-800 border border-[#E5E7EB] dark:border-slate-800 text-[#111827] dark:text-white flex items-center gap-1.5 text-xs shadow-md font-medium"
             title="Stop Webcam"
           >
             <CameraOff className="w-4 h-4 text-[#EF4444]" />
@@ -212,39 +281,104 @@ export const PoseCameraView: React.FC<PoseCameraViewProps> = ({
         ) : (
           <button
             onClick={startCamera}
-            className="p-2 rounded-lg bg-white/90 hover:bg-slate-50 border border-[#E5E7EB] text-[#111827] flex items-center gap-1.5 text-xs shadow-xs font-medium"
+            className="p-2 rounded-lg bg-white/90 hover:bg-slate-50 dark:bg-slate-900/90 dark:hover:bg-slate-800 border border-[#E5E7EB] dark:border-slate-800 text-[#111827] dark:text-white flex items-center gap-1.5 text-xs shadow-md font-medium"
             title="Start Webcam"
           >
             <Camera className="w-4 h-4 text-[#22A06B]" />
             <span className="hidden sm:inline">Start Camera</span>
           </button>
         )}
+
+        {/* Fullscreen Button */}
+        <button
+          onClick={toggleFullscreen}
+          className="p-2 rounded-lg bg-[#2563EB] hover:bg-[#1D4ED8] text-white flex items-center gap-1.5 text-xs shadow-md font-bold transition-all"
+          title={isFullscreen ? 'Exit Full Screen' : 'Full Screen Camera Mode'}
+        >
+          {isFullscreen ? (
+            <>
+              <Minimize2 className="w-4 h-4" />
+              <span>Exit Full Screen</span>
+            </>
+          ) : (
+            <>
+              <Maximize2 className="w-4 h-4" />
+              <span className="hidden sm:inline">Full Screen Camera</span>
+            </>
+          )}
+        </button>
       </div>
+
+      {/* Fullscreen Posture Feedback HUD */}
+      {isFullscreen && compensationMetrics && (
+        <div className="absolute bottom-6 left-6 right-6 z-10 flex flex-col md:flex-row items-center justify-between gap-4 p-4 rounded-2xl bg-slate-900/85 backdrop-blur-md border border-slate-700/60 text-white shadow-2xl">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 border border-blue-500/40 flex items-center justify-center text-blue-400">
+              <Activity className="w-5 h-5" />
+            </div>
+            <div>
+              <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">
+                Full-Screen Posture Telemetry
+              </div>
+              <div className="text-sm font-extrabold text-white flex items-center gap-2">
+                <span>Stability Score:</span>
+                <span className="text-[#22A06B] font-mono">{compensationMetrics.overallStability}%</span>
+              </div>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-4 text-xs">
+            <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center gap-2">
+              <span className="text-slate-400">Trunk Lean:</span>
+              <span className="font-mono font-bold text-white">{compensationMetrics.trunkLeanAngle}°</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30">
+                {compensationMetrics.trunkLeanLevel}
+              </span>
+            </div>
+
+            <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center gap-2">
+              <span className="text-slate-400">Shoulder Hike:</span>
+              <span className="font-mono font-bold text-white">{compensationMetrics.shoulderHikeDisplacement}</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                {compensationMetrics.shoulderHikeLevel}
+              </span>
+            </div>
+
+            <div className="px-3 py-1.5 rounded-lg bg-slate-800/80 border border-slate-700 flex items-center gap-2">
+              <span className="text-slate-400">Torso Rotation:</span>
+              <span className="font-mono font-bold text-white">{compensationMetrics.torsoRotationAngle}°</span>
+              <span className="px-2 py-0.5 rounded-full text-[10px] uppercase font-bold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                {compensationMetrics.torsoRotationLevel}
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Calibration Overlay: Simple Instructions */}
       {isCalibrating && (
-        <div className="absolute inset-0 bg-white/85 backdrop-blur-xs flex flex-col items-center justify-center text-center p-6 border-2 border-[#2563EB] rounded-2xl">
-          <div className="w-14 h-14 rounded-full bg-[#EAF2FF] border border-blue-200 flex items-center justify-center text-[#2563EB] mb-3">
+        <div className="absolute inset-0 bg-white/90 dark:bg-slate-950/90 backdrop-blur-sm flex flex-col items-center justify-center text-center p-6 border-2 border-[#2563EB] rounded-2xl z-20">
+          <div className="w-14 h-14 rounded-full bg-[#EAF2FF] dark:bg-blue-950 border border-blue-200 dark:border-blue-800 flex items-center justify-center text-[#2563EB] dark:text-blue-400 mb-3">
             <RefreshCw className="w-6 h-6 animate-spin" />
           </div>
-          <h3 className="text-xl font-extrabold text-[#111827]">Find your neutral position.</h3>
-          <p className="text-xs text-slate-500 mt-1 max-w-sm">
+          <h3 className="text-xl font-extrabold text-[#111827] dark:text-white">Find your neutral position.</h3>
+          <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-sm">
             Sit comfortably facing forward. Baseline posture is being recorded.
           </p>
         </div>
       )}
 
       {/* Calibration Complete Badge */}
-      {calibrationCompleted && !isCalibrating && (
-        <div className="absolute bottom-4 left-4 px-3.5 py-1.5 rounded-lg bg-[#EAF8F1] border border-emerald-200 text-xs font-bold text-[#22A06B] flex items-center gap-1.5 shadow-xs">
+      {calibrationCompleted && !isCalibrating && !isFullscreen && (
+        <div className="absolute bottom-4 left-4 px-3.5 py-1.5 rounded-lg bg-[#EAF8F1] border border-emerald-200 text-xs font-bold text-[#22A06B] flex items-center gap-1.5 shadow-xs z-10">
           <CheckCircle2 className="w-4 h-4 text-[#22A06B]" />
           <span>Calibration complete.</span>
         </div>
       )}
 
       {/* Warning Notice Bar */}
-      {errorMessage && cameraState === 'simulated' && (
-        <div className="absolute bottom-4 right-4 max-w-xs px-3.5 py-2 rounded-lg bg-[#FEF3C7] border border-amber-200 text-[11px] text-[#92400E] flex items-center gap-2 shadow-xs">
+      {errorMessage && cameraState === 'simulated' && !isFullscreen && (
+        <div className="absolute bottom-4 right-4 max-w-xs px-3.5 py-2 rounded-lg bg-[#FEF3C7] border border-amber-200 text-[11px] text-[#92400E] flex items-center gap-2 shadow-xs z-10">
           <AlertCircle className="w-4 h-4 text-[#D97706] shrink-0" />
           <span>{errorMessage}</span>
         </div>

@@ -15,6 +15,7 @@ export interface CompensationMetrics {
   torsoRotationAngle: number; // Angle mismatch between shoulders and hips
   torsoRotationLevel: CompensationLevel;
   overallStability: number; // 0..100%
+  movementConsistency?: number; // 0..100% (Computer vision temporal posture consistency)
 }
 
 export interface BaselineCalibration {
@@ -40,6 +41,13 @@ export interface HardwareTelemetry {
   mode: TelemetryMode | 'simulated' | 'hardware';
   profilePreset?: 'normal' | 'fatigue' | 'high_compensation';
   connectionStatus?: 'connected' | 'disconnected' | 'simulated';
+  leftForce?: number;
+  rightForce?: number;
+  rudder?: number;
+  hardwareConnected?: boolean;
+  pedalsConnected?: boolean;
+  arduinoConnected?: boolean;
+  source?: 'hardware' | 'simulated' | 'demo';
 }
 
 export interface FusionScore {
@@ -50,15 +58,46 @@ export interface FusionScore {
 }
 
 export interface AIReport {
-  positiveObservations: string[];
-  measurableConcerns: string[];
+  sessionSummary?: string;
+  movementObservations?: string[];
+  performanceSummary?: {
+    actuatorForce?: string;
+    reactionTime?: string;
+    accuracy?: string;
+    consistency?: string;
+    [key: string]: any;
+  };
   sessionTrend: string;
   therapistDiscussionPoints: string[];
+  positiveObservations: string[];
+  measurableConcerns: string[];
   disclaimer: string;
+  label?: string;
+  sublabel?: string;
+  language?: string;
+}
+
+export type SessionSource = 'hardware' | 'demo';
+
+export interface RecordedSessionData {
+  sessionId: string;
+  startedAt: string; // ISO 8601 string
+  endedAt: string;   // ISO 8601 string
+  durationSeconds: number;
+  telemetry: HardwareTelemetry;
+  vision: CompensationMetrics;
+  analytics: FusionScore | any;
+  source: SessionSource;
+  status: 'completed' | 'invalid';
+  sampleCount?: number;
 }
 
 export interface RehabSession {
   id: string;
+  sessionId?: string;
+  startedAt?: string;
+  endedAt?: string;
+  source?: SessionSource;
   patientId: string;
   patientName: string;
   date: string;
@@ -66,6 +105,8 @@ export interface RehabSession {
   fusionScore: FusionScore;
   compensationMetrics: CompensationMetrics;
   telemetry: HardwareTelemetry;
+  recordedSessionData?: RecordedSessionData;
   aiReport?: AIReport;
-  status: 'completed' | 'in_progress';
+  status: 'completed' | 'in_progress' | 'invalid';
 }
+

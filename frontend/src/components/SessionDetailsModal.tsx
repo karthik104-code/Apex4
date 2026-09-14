@@ -40,9 +40,18 @@ export const SessionDetailsModal: React.FC<SessionDetailsModalProps> = ({ sessio
         {/* Modal Header */}
         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-slate-100 pb-4 pr-10">
           <div>
-            <div className="flex items-center gap-2 mb-1">
+            <div className="flex flex-wrap items-center gap-2 mb-1">
               <span className="px-2.5 py-0.5 rounded-full bg-[#EAF2FF] text-[#2563EB] text-[10px] font-bold uppercase tracking-wider border border-blue-200">
                 Session Audit Record #{session.id}
+              </span>
+              <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-bold border ${
+                session.source === 'hardware' || session.telemetry.source === 'hardware' || session.telemetry.hardwareConnected
+                  ? 'bg-[#EAF8F1] text-[#22A06B] border-emerald-200'
+                  : 'bg-[#F8FAFC] text-slate-600 border-slate-200'
+              }`}>
+                {session.source === 'hardware' || session.telemetry.source === 'hardware' || session.telemetry.hardwareConnected
+                  ? '● Hardware Connected'
+                  : '◌ APEX 4 Demo Telemetry'}
               </span>
             </div>
             <h2 className="text-xl font-bold text-[#111827] flex items-center gap-2">

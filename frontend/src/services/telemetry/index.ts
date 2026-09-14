@@ -169,12 +169,12 @@ export class HardwareInterfaceAdapter implements IMSV1HardwareAdapter {
         const rawJson = await response.json();
         return validateTelemetryData({
           ...rawJson,
-          mode: 'LIVE HARDWARE',
-          connectionStatus: 'connected',
+          mode: rawJson.source === 'hardware' ? 'LIVE HARDWARE' : 'SIMULATED',
+          connectionStatus: rawJson.connected ? 'connected' : 'simulated',
         });
       }
     } catch {
-      // Endpoint unavailable -> return disconnected status marked LIVE HARDWARE
+      // Endpoint unavailable -> return fallback
     }
 
     return {
@@ -188,7 +188,7 @@ export class HardwareInterfaceAdapter implements IMSV1HardwareAdapter {
     };
   }
 
-  public subscribe(callback: (data: MSV1TelemetryData) => void, intervalMs = 1000): () => void {
+  public subscribe(callback: (data: MSV1TelemetryData) => void, intervalMs = 500): () => void {
     const timer = setInterval(async () => {
       const data = await this.getTelemetry();
       callback(data);

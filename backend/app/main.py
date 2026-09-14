@@ -36,8 +36,12 @@ async def global_exception_handler(request: Request, exc: Exception):
         }
     )
 
+from app.api.v1.endpoints.hardware import router as hardware_router
+
 # Router Registrations
 app.include_router(api_v1_router, prefix=settings.API_V1_STR)
+app.include_router(hardware_router, prefix="/api/hardware", tags=["Hardware Bridge Direct"])
+
 
 @app.get("/health")
 def health():
