@@ -5,6 +5,13 @@ import {
   SessionSource,
 } from '../types/rehab';
 import { computeSensorFusionScore, ExtendedFusionScore } from './fusionEngine';
+import { unifiedAnalyticsEngine } from '../analytics/unifiedAnalyticsEngine';
+import {
+  RawHardwareFrame,
+  VisionFrame,
+  VoiceCorrectionEvent,
+  StructuredSessionAnalysis,
+} from '../analytics/types';
 
 export type RecordingState = 'idle' | 'recording' | 'paused' | 'completed' | 'invalid';
 
@@ -22,6 +29,7 @@ export class SessionRecorder {
   private endedAt: string | null = null;
   private source: SessionSource = 'demo';
   private snapshots: SessionSnapshot[] = [];
+  private voiceEvents: VoiceCorrectionEvent[] = [];
   private hardwareDisconnectOccurred: boolean = false;
   private accumulatedActiveMs: number = 0;
   private lastStateChangeTimestamp: number = 0;
@@ -37,6 +45,7 @@ export class SessionRecorder {
     this.source = source;
     this.state = 'recording';
     this.snapshots = [];
+    this.voiceEvents = [];
     this.hardwareDisconnectOccurred = false;
     this.accumulatedActiveMs = 0;
     this.lastStateChangeTimestamp = now.getTime();
@@ -100,6 +109,17 @@ export class SessionRecorder {
   }
 
   /**
+   * Records a Voice Posture Commander event
+   */
+  recordVoiceEvent(event: VoiceCorrectionEvent): boolean {
+    if (this.state !== 'recording' && this.state !== 'paused') {
+      return false;
+    }
+    this.voiceEvents.push(event);
+    return true;
+  }
+
+  /**
    * Ends session recording and builds structured session summary object.
    */
   endSession(): RecordedSessionData {
@@ -150,6 +170,44 @@ export class SessionRecorder {
     }
 
     this.state = 'completed';
+
+    // Build raw frames for Unified Analytics Engine
+    const rawHwFrames: RawHardwareFrame[] = this.snapshots.map((s) => ({
+      timestamp: s.timestamp,
+      leftLoadCell: s.telemetry.leftForce || 0,
+      rightLoadCell: s.telemetry.rightForce || 0,
+      rudderDifferential: s.telemetry.rudder !== undefined ? s.telemetry.rudder : 128,
+      actuatorForce: s.telemetry.force || 0,
+      reactionLatencyMs: Math.round((s.telemetry.reaction_time !== undefined ? s.telemetry.reaction_time : (s.telemetry.reactionTime || 1.2)) * 1000),
+      targetHit: (s.telemetry.accuracy || 0) >= 70,
+      source: (this.source === 'hardware' ? 'hardware' : 'demo') as any,
+      connected: !this.hardwareDisconnectOccurred && (s.telemetry.hardwareConnected || false),
+    }));
+
+    const rawVisionFrames: VisionFrame[] = this.snapshots.map((s) => ({
+      timestamp: s.timestamp,
+      trunkLeanAngleDeg: s.vision.trunkLeanAngle || 0,
+      trunkLeanDirection: s.vision.trunkLeanDirection || 'neutral',
+      trunkLeanLevel: s.vision.trunkLeanLevel || 'low',
+      shoulderHikeDisplacement: s.vision.shoulderHikeDisplacement || 0,
+      shoulderHikeLevel: s.vision.shoulderHikeLevel || 'low',
+      torsoRotationAngleDeg: s.vision.torsoRotationAngle || 0,
+      torsoRotationLevel: s.vision.torsoRotationLevel || 'low',
+      posturalStabilityPct: s.vision.overallStability || 85,
+      trackingConfidence: 0.95,
+      poseDetected: true,
+    }));
+
+    // Generate comprehensive Structured Session Analysis
+    const structuredAnalysis = unifiedAnalyticsEngine.analyzeSession(
+      this.sessionId,
+      this.startedAt,
+      this.endedAt,
+      this.source === 'hardware' ? 'hardware' : 'demo',
+      rawHwFrames,
+      rawVisionFrames,
+      this.voiceEvents
+    );
 
     // Compute aggregated telemetry averages across snapshots
     const sampleCount = this.snapshots.length;
@@ -232,6 +290,7 @@ export class SessionRecorder {
       telemetry: aggregatedTelemetry,
       vision: aggregatedVision,
       analytics: finalAnalytics,
+      structuredAnalysis,
       source: this.source,
       status: 'completed',
       sampleCount,
@@ -249,6 +308,11 @@ export class SessionRecorder {
   getSnapshotCount(): number {
     return this.snapshots.length;
   }
+
+  getVoiceEvents(): VoiceCorrectionEvent[] {
+    return [...this.voiceEvents];
+  }
 }
 
 export const sessionRecorder = new SessionRecorder();
+

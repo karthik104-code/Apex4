@@ -132,6 +132,8 @@ export interface AIReport {
   sublabel?: string;
 }
 
+import { StructuredSessionAnalysis } from '../analytics/types';
+
 export type SessionSource = 'hardware' | 'demo';
 
 export interface RecordedSessionData {
@@ -142,6 +144,7 @@ export interface RecordedSessionData {
   telemetry: HardwareTelemetry;
   vision: CompensationMetrics;
   analytics: FusionScore | any;
+  structuredAnalysis?: StructuredSessionAnalysis;
   source: SessionSource;
   status: 'completed' | 'invalid';
   sampleCount?: number;
@@ -161,6 +164,8 @@ export interface RehabSession {
   compensationMetrics: CompensationMetrics;
   telemetry: HardwareTelemetry;
   recordedSessionData?: RecordedSessionData;
+  structuredAnalysis?: StructuredSessionAnalysis;
   aiReport?: AIReport;
   status: 'completed' | 'in_progress' | 'invalid';
 }
+
