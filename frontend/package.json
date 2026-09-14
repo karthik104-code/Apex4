@@ -2,12 +2,17 @@
   "name": "ai-healthcare-companion-frontend",
   "private": true,
   "version": "1.0.0",
+  "main": "desktop/main.cjs",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "npx -p typescript tsc --noEmit && vite build",
     "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "desktop:dev": "concurrently \"vite --port 5173\" \"wait-on tcp:5173 && cross-env NODE_ENV=development electron .\"",
+    "desktop:prebuild": "node desktop/build.cjs",
+    "desktop:build": "npm run build && npm run desktop:prebuild && electron-builder --win --dir",
+    "desktop:dist": "npm run build && npm run desktop:prebuild && electron-builder --win"
   },
   "dependencies": {
     "@mediapipe/tasks-vision": "^1.0.1",
@@ -27,9 +32,58 @@
     "@types/react-dom": "^18.2.21",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.4.18",
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3",
     "postcss": "^8.4.35",
     "tailwindcss": "^3.4.1",
     "typescript": "^5.2.2",
-    "vite": "^5.1.6"
+    "vite": "^5.1.6",
+    "wait-on": "^7.2.0"
+  },
+  "build": {
+    "appId": "ai.apex4.app",
+    "productName": "APEX 4",
+    "directories": {
+      "output": "dist-desktop"
+    },
+    "files": [
+      "dist/**/*",
+      "desktop/**/*",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../backend/dist/apex4-backend",
+        "to": "backend/apex4-backend",
+        "filter": [
+          "**/*"
+        ]
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        },
+        {
+          "target": "dir",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "APEX 4"
+    }
   }
 }
