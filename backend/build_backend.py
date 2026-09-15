@@ -37,11 +37,7 @@ def build():
         "pydantic",
         "pydantic_settings",
         "serial",
-        "serial.tools",
-        "serial.tools.list_ports",
-        "serial.tools.list_ports_windows",
         "hid",
-        "hidapi",
         "starlette",
         "anyio",
         "email_validator"
@@ -55,8 +51,6 @@ def build():
         "--noconfirm",
         "--clean",
         "--noconsole",
-        "--collect-all=hid",
-        "--collect-all=serial",
         f"--distpath={os.path.join(backend_dir, 'dist')}",
         f"--workpath={build_dir}",
     ]
