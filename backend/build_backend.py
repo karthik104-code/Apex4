@@ -58,6 +58,9 @@ def build():
     for imp in hidden_imports:
         cmd.extend(["--hidden-import", imp])
         
+    cmd.extend(["--collect-all", "hid"])
+    cmd.extend(["--collect-all", "hidapi"])
+        
     cmd.append(entrypoint)
     
     print(f"[BUILD] Executing: {' '.join(cmd)}")
