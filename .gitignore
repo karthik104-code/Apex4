@@ -58,6 +58,10 @@ backend/dist/
 backend/build/
 *.local
 
+# Web deployment configs (project is now desktop-only)
+vercel.json
+.vercel/
+
 # IDE & System
 .vscode/
 .idea/
@@ -65,3 +69,10 @@ backend/build/
 *.swo
 .DS_Store
 Thumbs.db
+
+# Test scripts
+backend/test_ws.py
+frontend/test_hid.py
+frontend/test_hid_2.py
+frontend/scan_ports.py
+

@@ -1,13 +1,14 @@
-services:
-  - type: web
-    name: healthcare-companion-api
-    env: python
-    buildCommand: pip install -r requirements.txt
-    startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT
-    envVars:
-      - key: ENVIRONMENT
-        value: production
-      - key: PROJECT_NAME
-        value: APEX 4 Rehabilitation Platform API
-      - key: CORS_ORIGINS
-        value: '["*"]'
+# NOTE: This project has been converted from a web service to a local desktop application.
+# The backend now runs embedded within the Electron desktop app (apex4-backend.exe).
+# This render.yaml is kept for reference only and is NOT active.
+#
+# To run the application:
+#   1. Install: Run the APEX4-Windows-x64.zip portable build
+#   2. Dev mode: npm run desktop:dev (from /frontend directory)
+
+# services:
+#   - type: web
+#     name: apex4-rehabilitation-api
+#     env: python
+#     buildCommand: pip install -r requirements.txt
+#     startCommand: uvicorn app.main:app --host 0.0.0.0 --port $PORT

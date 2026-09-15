@@ -63,6 +63,8 @@
       }
     ],
     "win": {
+      "forceCodeSigning": false,
+      "publisherName": "APEX 4",
       "target": [
         {
           "target": "nsis",
@@ -78,6 +80,7 @@
         }
       ]
     },
+    "publish": null,
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
